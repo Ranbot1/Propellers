@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#07111f" />
+  <title>螺旋桨 3D 基础概念交互教程</title>
+  <meta name="description" content="通过可旋转、可点击、可爆炸的三维螺旋桨模型理解弦、扭转、后掠、桨尖、涵道等实体概念。" />
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(10, 24, 41, .88);
+      --panel2: rgba(17, 35, 57, .72);
+      --line: rgba(165, 200, 230, .16);
+      --text: #edf6ff;
+      --muted: #9fb7ca;
+      --accent: #70d6ff;
+      --accent2: #ffc857;
+      --good: #8be28b;
+      --danger: #ff7d8a;
+      --shadow: 0 22px 55px rgba(0,0,0,.34);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    body { overflow-x: hidden; }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background:
+        radial-gradient(circle at 68% 15%, rgba(60, 149, 210, .14), transparent 32%),
+        linear-gradient(180deg, #07111f 0%, #081521 100%);
+    }
+
+    header {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+      background: rgba(5, 15, 27, .76);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, rgba(112,214,255,.25), rgba(255,200,87,.13));
+      border: 1px solid rgba(112,214,255,.28);
+      font-size: 20px;
+      box-shadow: inset 0 0 22px rgba(112,214,255,.08);
+    }
+    h1 { margin: 0; font-size: clamp(18px, 2vw, 24px); letter-spacing: -.02em; }
+    .kicker { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .header-note { color: var(--muted); font-size: 12px; text-align: right; max-width: 420px; }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr) 330px;
+      gap: 0;
+    }
+
+    .sidebar, .info {
+      position: relative;
+      z-index: 10;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      min-height: 0;
+      overflow: auto;
+    }
+    .sidebar { border-right: 1px solid var(--line); padding: 18px 14px 30px; }
+    .info { border-left: 1px solid var(--line); padding: 20px 20px 34px; }
+
+    .panel-title {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin: 4px 8px 12px;
+    }
+
+    .concept-list { display: grid; gap: 7px; }
+    .concept-btn {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      padding: 10px 11px;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    .concept-btn:hover { background: rgba(112,214,255,.07); border-color: rgba(112,214,255,.12); }
+    .concept-btn.active {
+      background: linear-gradient(90deg, rgba(112,214,255,.16), rgba(112,214,255,.05));
+      border-color: rgba(112,214,255,.28);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+    .concept-btn .en { display: block; font-weight: 760; font-size: 13px; }
+    .concept-btn .zh { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .concept-btn.active .zh { color: #cfeaff; }
+
+    .viewer {
+      position: relative;
+      min-width: 0;
+      min-height: 660px;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 38px 38px;
+    }
+    #three { position: absolute; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; outline: none; }
+
+    .toolbar {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      z-index: 5;
+    }
+    .tool {
+      border: 1px solid rgba(188,220,245,.18);
+      background: rgba(7, 19, 33, .76);
+      color: var(--text);
+      padding: 9px 11px;
+      border-radius: 11px;
+      cursor: pointer;
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+      transition: .18s ease;
+    }
+    .tool:hover { border-color: rgba(112,214,255,.42); background: rgba(15, 38, 61, .88); }
+    .tool.on { color: #07111f; background: var(--accent); border-color: var(--accent); font-weight: 800; }
+
+    .status {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      z-index: 5;
+      max-width: min(470px, calc(100% - 32px));
+      border: 1px solid rgba(188,220,245,.14);
+      border-radius: 14px;
+      background: rgba(7, 19, 33, .76);
+      backdrop-filter: blur(12px);
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+      box-shadow: var(--shadow);
+    }
+    .status strong { color: var(--text); }
+
+    .tooltip {
+      position: fixed;
+      z-index: 100;
+      pointer-events: none;
+      transform: translate(14px, 14px);
+      background: rgba(5, 14, 25, .94);
+      border: 1px solid rgba(112,214,255,.26);
+      border-radius: 9px;
+      padding: 7px 9px;
+      color: var(--text);
+      font-size: 12px;
+      display: none;
+      box-shadow: var(--shadow);
+    }
+
+    .info .eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .info h2 { margin: 6px 0 3px; font-size: 24px; line-height: 1.12; }
+    .info .cn { color: var(--accent2); font-size: 15px; font-weight: 650; margin-bottom: 16px; }
+    .info p { color: #c7d9e8; line-height: 1.7; font-size: 13px; margin: 0 0 14px; }
+    .definition {
+      margin: 14px 0;
+      padding: 13px 14px;
+      border-radius: 13px;
+      border: 1px solid rgba(112,214,255,.18);
+      background: rgba(112,214,255,.055);
+      color: #e9f7ff;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .equation {
+      margin: 14px 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.08);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 13px;
+      color: #e8f5ff;
+      overflow-x: auto;
+    }
+    .bullets { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+    .bullets li {
+      position: relative;
+      padding-left: 18px;
+      color: #bfd0df;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .bullets li::before { content: "•"; position: absolute; left: 2px; top: -1px; color: var(--accent2); font-size: 18px; }
+    .mini-card {
+      margin-top: 18px;
+      padding: 13px;
+      border-radius: 13px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(255,255,255,.075);
+    }
+    .mini-card strong { font-size: 12px; }
+    .mini-card p { margin: 7px 0 0; font-size: 12px; color: var(--muted); }
+    .info a { color: var(--accent); text-decoration: none; }
+    .info a:hover { text-decoration: underline; }
+
+    .legend {
+      position: absolute;
+      right: 15px;
+      bottom: 15px;
+      z-index: 5;
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 55%;
+    }
+    .legend span { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot.a { background: var(--accent); }
+    .dot.b { background: var(--accent2); }
+
+    @media (max-width: 1050px) {
+      .workspace { grid-template-columns: 220px minmax(0, 1fr); }
+      .info { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); max-height: none; }
+      .viewer { min-height: 610px; }
+    }
+    @media (max-width: 720px) {
+      header { align-items: flex-start; padding: 14px; }
+      .header-note { display: none; }
+      .workspace { display: block; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+      .panel-title { display: none; }
+      .concept-list { display: flex; gap: 7px; min-width: max-content; }
+      .concept-btn { width: 145px; }
+      .viewer { min-height: 70vh; }
+      .info { border-top: 1px solid var(--line); padding: 20px 16px 30px; }
+      .legend { display: none; }
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <div class="brand-mark">✦</div>
+        <div>
+          <div class="kicker">Propeller Anatomy · Part 01</div>
+          <h1>螺旋桨基础概念 · 三维交互教程</h1>
+        </div>
+      </div>
+      <div class="header-note">点击左侧术语或直接点击三维模型。拖动旋转 · 滚轮缩放 · 右键平移。模型为教学几何，不对应某一款大疆量产桨。</div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <div class="panel-title">实体概念</div>
+        <div class="concept-list" id="conceptList"></div>
+      </aside>
+
+      <section class="viewer" id="viewer">
+        <div id="three"></div>
+        <div class="toolbar">
+          <button class="tool" id="resetView">重置视角</button>
+          <button class="tool" id="topView">俯视</button>
+          <button class="tool" id="sideView">侧视</button>
+          <button class="tool" id="explode">教学爆炸图</button>
+          <button class="tool" id="autoRotate">自动旋转</button>
+        </div>
+        <div class="status" id="status"><strong>开始：</strong>先点“Leading edge 前缘”，观察高亮线在真实桨叶上的位置。</div>
+        <div class="legend"><span><i class="dot a"></i>当前高亮</span><span><i class="dot b"></i>辅助几何</span></div>
+      </section>
+
+      <aside class="info">
+        <div class="eyebrow">Selected concept</div>
+        <h2 id="infoEn">Leading edge</h2>
+        <div class="cn" id="infoZh">前缘</div>
+        <div class="definition" id="infoDefinition"></div>
+        <p id="infoBody"></p>
+        <div class="equation" id="infoEquation"></div>
+        <ul class="bullets" id="infoBullets"></ul>
+        <div class="mini-card">
+          <strong>如何使用这张图</strong>
+          <p id="infoAction">拖动模型，从不同角度确认高亮部分到底是“线、面、截面还是整件”。</p>
+        </div>
+        <div class="mini-card">
+          <strong>推荐参考</strong>
+          <p><a href="https://www.nasa.gov/reference/openvsp-propellers/" target="_blank" rel="noreferrer">NASA OpenVSP · Propellers</a><br>
+          <a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/propeller-thrust/" target="_blank" rel="noreferrer">NASA Glenn · Propeller Thrust</a><br>
+          <a href="https://archive.aoe.vt.edu/mason/Mason_f/DuctedFans.pdf" target="_blank" rel="noreferrer">Virginia Tech · Ducted Fans</a></p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const concepts = [
+      { id:"blade", en:"Blade", zh:"桨叶", def:"从桨毂向外延伸、真正与空气交换动量的旋转翼面。", body:"把一片螺旋桨桨叶理解成“旋转的机翼”最重要。它不是平板，而是由很多不同半径位置的翼型截面连续连接而成。", eq:"Blade = airfoil sections + chord(r) + twist(r) + spatial stacking", bullets:["真实桨叶通常沿半径改变弦长和扭转角。","气动力主要来自压力面与吸力面之间的压力差。","噪声研究常进一步关注桨尖、尾缘和非定常载荷。"] },
+      { id:"hub", en:"Hub", zh:"桨毂", def:"螺旋桨中心与电机轴连接的实体区域。", body:"桨毂负责把电机扭矩传给桨叶。对小型无人机，桨毂往往与桨叶一体成形；折叠桨则会增加铰接结构。", eq:"Torque: motor → hub → blade", bullets:["这里不是主要升力区域，但决定连接与载荷传递。","桨根附近圆周速度较低。","爆炸图模式会把桨毂与两片桨叶教学性分开。"] },
+      { id:"root", en:"Root", zh:"桨根", def:"桨叶最靠近桨毂的区域，是桨叶从中心向外过渡的起始段。", body:"桨根承受较大的弯矩，但因为 r 小，局部线速度较低。它的几何通常比外段更厚、更偏结构设计。", eq:"V_t = ωr  →  r 越小，局部圆周速度越低", bullets:["桨根不等于桨毂：一个是叶片区域，一个是中心连接件。","结构强度需求在桨根很重要。","叶素气动分析往往从某个非零 r/R 开始。"] },
+      { id:"tip", en:"Tip", zh:"桨尖", def:"桨叶半径最外端的区域，局部圆周速度通常最高。", body:"桨尖是无人机气动噪声研究的重点区域。压力面气流会绕向吸力面并形成桨尖涡；高速度与涡结构共同使这里对噪声非常敏感。", eq:"V_tip ≈ ωR", bullets:["桨尖涡 tip vortex 在这里形成。","后掠、收窄、上反/下反都常发生在外段。","很多低噪桨会对桨尖载荷进行“卸载”。"] },
+      { id:"leading", en:"Leading edge", zh:"前缘", def:"桨叶旋转时，翼型截面最先迎接来流的那条边。", body:"前缘是一条沿展向延伸的空间曲线。它不是“最外面的边”，而是每个翼型截面最前方的点连成的边。", eq:"Airflow meets: leading edge → airfoil → trailing edge", bullets:["本模型中高亮的蓝色空间曲线就是前缘。","前缘曲率和表面质量会影响分离与噪声。","看专利图时，LE 常写作 leading edge。"] },
+      { id:"trailing", en:"Trailing edge", zh:"后缘", def:"气流经过翼型后，从桨叶离开的那条细边。", body:"后缘同样是沿半径延伸的空间曲线。湍流边界层经过后缘散射，是宽带噪声的重要来源之一。", eq:"Boundary-layer turbulence + trailing edge → broadband noise", bullets:["后缘通常比前缘尖薄。","尾缘噪声是旋翼宽带噪声研究的重要分支。","不要把“后缘”与“后掠 sweep”混淆。"] },
+      { id:"chord", en:"Chord / chord length", zh:"弦 / 弦长 c", def:"在某一个翼型截面上，从前缘到后缘连接的参考直线；其长度就是弦长 c。", body:"弦并不是桨叶上真实存在的一根杆。把桨叶在某个 r/R 位置切一刀，前缘到后缘的直线就是弦线。不同半径处的 c 通常不同。", eq:"c = |LE − TE|   ，常写成 c(r) 或 c/R", bullets:["高亮黄色线表示某个 r/R 截面的弦线。","弦长决定局部叶片有多“宽”。","CAD 重建常用多个 r/R 截面的 c(r) 来放样。"] },
+      { id:"airfoil", en:"Airfoil section", zh:"翼型截面", def:"沿近似垂直于桨叶展向的方向切开桨叶得到的二维截面形状。", body:"一片真实桨叶可以理解为很多翼型截面沿半径排布并连续放样。截面有前缘、后缘、弦线、厚度和弯度。", eq:"3D blade ≈ loft{ airfoil(r_i) }", bullets:["黄色闭合线显示一个示例截面。","不同 r/R 处翼型可以相同，也可以渐变。","你前面 CAD 的多个 section，本质就是这些翼型截面。"] },
+      { id:"twist", en:"Twist", zh:"扭转", def:"不同半径位置的翼型截面具有不同安装角，连起来后桨叶呈现沿展向逐渐扭转。", body:"因为 V_t = ωr，桨尖比桨根移动得快。若所有截面角度相同，局部迎角会很不均匀，所以实际桨叶通常从根到尖逐渐减小几何安装角。", eq:"θ = θ(r)   通常：θ_root > θ_tip", bullets:["高亮多个截面可以直观看到角度在变化。","扭转 twist 与整体桨距 pitch 有联系，但不是同一个概念。","专利里的“攻角/安装角径向分布”常对应这一类几何。"] },
+      { id:"pitch", en:"Pitch", zh:"桨距", def:"把螺旋桨想成螺丝时，理论上旋转一圈沿轴向前进的几何距离。", body:"桨距是描述螺旋几何的量，不是单纯等于某一个截面的扭转角。网页用一条黄色螺旋线演示“旋转一圈同时前进”的概念。", eq:"Geometric pitch ≈ 2πr · tan(β)  （特定截面近似）", bullets:["固定桨距桨仍然具有沿半径的扭转。","例如“10×4.5”常表示直径约 10 英寸、名义桨距约 4.5 英寸。","实际前进距离会受滑移和工作状态影响。"] },
+      { id:"sweep", en:"Sweep", zh:"后掠", def:"从旋转轴方向俯视时，桨叶的参考线在旋转平面内向前或向后弯曲。", body:"后掠是“平面内”的空间偏移。低噪桨常在外段做后掠，使桨尖像弯刀。它与弦长、扭转、上反/下反是不同维度的设计变量。", eq:"Sweep = in-plane offset of stacking line", bullets:["黄色直线是未后掠的径向参考。","蓝色曲线是本模型的四分之一弦积叠线。","从俯视视角最容易理解后掠。"] },
+      { id:"dihedral", en:"Dihedral / Anhedral", zh:"上反 / 下反", def:"桨叶相对旋转平面向轴向一侧或另一侧弯曲，是“平面外”的三维形态。", body:"与 sweep 不同，上反/下反要从侧面看。本模型外段轻微上翘，用来演示三维桨尖。大疆新专利中出现的主体上反、桨尖下反，就属于这类空间设计。", eq:"Dihedral/Anhedral = out-of-plane offset", bullets:["俯视可能看不出，切换“侧视”最清楚。","它可以改变桨尖涡、载荷和结构间隙。","三维低噪桨常同时存在 sweep + dihedral/anhedral + twist。"] },
+      { id:"plane", en:"Rotation plane", zh:"旋转平面", def:"螺旋桨绕转轴旋转时所对应的基准平面，通常垂直于电机轴。", body:"很多几何概念都要以旋转平面为参照：后掠发生在平面内，上反/下反发生在平面外。", eq:"Rotor axis ⟂ rotation plane", bullets:["蓝色半透明圆盘表示理想旋转平面。","真实扭转桨叶的表面并不会完全落在该平面内。","分析桨尖间隙和涵道时也常以此平面为基准。"] },
+      { id:"surfaces", en:"Pressure / suction surface", zh:"压力面 / 吸力面", def:"翼型两侧的两个主要表面；在典型正推力工况下，两侧存在压力差并产生轴向气动力。", body:"为了教学，这里把两侧表面分别着色。真实工况下哪一侧是压力面/吸力面取决于旋向、安装角与来流，但核心概念是两侧压力分布不同。", eq:"Δp across blade surface → aerodynamic force", bullets:["蓝色与黄色分别显示两侧表面。","桨尖处两侧压力试图绕流连通，会形成 tip vortex。","载荷噪声与随时间变化的表面压力密切相关。"] },
+      { id:"duct", en:"Duct / shroud", zh:"涵道 / 外罩", def:"包围螺旋桨外缘的一圈环形气动结构；它不是桨叶自身的一部分。", body:"开放桨没有外圈，而涵道风扇用环形外罩约束桨尖附近流动。涵道可能提高某些工况下的效率、改变噪声和安全性，但也会引入重量、阻力和转子—涵道相互作用。", eq:"Open propeller + surrounding annular duct → ducted fan", bullets:["选择该项后会出现半透明环形外罩。","涵道和“桨尖”是两个不同实体。","涵道并不意味着在所有工况下都更安静。"] }
+    ];
+
+    const conceptMap = Object.fromEntries(concepts.map(c => [c.id, c]));
+    const list = document.getElementById("conceptList");
+    concepts.forEach(c => {
+      const b = document.createElement("button");
+      b.className = "concept-btn";
+      b.dataset.id = c.id;
+      b.innerHTML = '<span class="en">' + c.en + '</span><span class="zh">' + c.zh + '</span>';
+      b.addEventListener("click", () => selectConcept(c.id, true));
+      list.appendChild(b);
+    });
+
+    const infoEn = document.getElementById("infoEn");
+    const infoZh = document.getElementById("infoZh");
+    const infoDefinition = document.getElementById("infoDefinition");
+    const infoBody = document.getElementById("infoBody");
+    const infoEquation = document.getElementById("infoEquation");
+    const infoBullets = document.getElementById("infoBullets");
+    const infoAction = document.getElementById("infoAction");
+    const status = document.getElementById("status");
+    const tooltip = document.getElementById("tooltip");
+
+    const holder = document.getElementById("three");
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x07111f, 0.026);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    camera.position.set(5.8, -7.8, 5.4);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(holder.clientWidth, holder.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    holder.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.075;
+    controls.target.set(0,0,0);
+    controls.minDistance = 4.2;
+    controls.maxDistance = 18;
+    controls.autoRotateSpeed = 0.9;
+    controls.update();
+
+    scene.add(new THREE.HemisphereLight(0xbfe7ff, 0x132235, 1.2));
+    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    key.position.set(4,-4,7); scene.add(key);
+    const fill = new THREE.DirectionalLight(0x70d6ff, 1.2);
+    fill.position.set(-5,4,2); scene.add(fill);
+
+    const grid = new THREE.GridHelper(13, 26, 0x20415d, 0x173148);
+    grid.rotation.x = Math.PI/2;
+    grid.position.z = -1.3;
+    grid.material.transparent = true;
+    grid.material.opacity = .30;
+    scene.add(grid);
+
+    const rotor = new THREE.Group();
+    scene.add(rotor);
+
+    const R = 3.35;
+    const ROOT = 0.58;
+    const bladeGroups = [];
+    const pickables = [];
+    const highlightHelpers = {};
+    const baseBladeColor = new THREE.Color(0xa9bfd0);
+    const accent = new THREE.Color(0x70d6ff);
+    const accent2 = new THREE.Color(0xffc857);
+
+    function chordAt(t) {
+      return 0.90 * (1 - 0.64*t) + 0.18*Math.sin(Math.PI*t);
+    }
+    function twistAt(t) {
+      return THREE.MathUtils.degToRad(29 - 19*t);
+    }
+    function sweepAt(t) {
+      const q = Math.max(0, (t - .58) / .42);
+      return -0.58 * Math.pow(q, 1.45);
+    }
+    function dihedralAt(t) {
+      const q = Math.max(0, (t - .70) / .30);
+      return 0.10*t*t + 0.26*q*q;
+    }
+    function thickAt(t) { return 0.12 - 0.025*t; }
+
+    function thicknessProfile(x) {
+      const xx = Math.max(0, Math.min(1, x));
+      return 5*(0.2969*Math.sqrt(xx) - 0.1260*xx - 0.3516*xx*xx + 0.2843*xx*xx*xx - 0.1036*xx*xx*xx*xx);
+    }
+
+    function pointAt(t, u, side) {
+      const r = ROOT + (R-ROOT)*t;
+      const c = chordAt(t);
+      const theta = twistAt(t);
+      const y0 = (0.25-u)*c;
+      const z0 = side * thickAt(t) * c * thicknessProfile(u);
+      const y = y0*Math.cos(theta) - z0*Math.sin(theta) + sweepAt(t);
+      const z = y0*Math.sin(theta) + z0*Math.cos(theta) + dihedralAt(t);
+      return new THREE.Vector3(r, y, z);
+    }
+
+    function meanPointAt(t,u) {
+      const a = pointAt(t,u,1);
+      const b = pointAt(t,u,-1);
+      return a.add(b).multiplyScalar(.5);
+    }
+
+    function makeSurface(side, conceptId) {
+      const ns = 34, nc = 28;
+      const pos = [], idx = [];
+      for (let i=0;i<=ns;i++) {
+        const t = i/ns;
+        for (let j=0;j<=nc;j++) {
+          const u = j/nc;
+          const p = pointAt(t,u,side);
+          pos.push(p.x,p.y,p.z);
+        }
+      }
+      for (let i=0;i<ns;i++) {
+        for (let j=0;j<nc;j++) {
+          const a = i*(nc+1)+j, b=a+1, c=(i+1)*(nc+1)+j, d=c+1;
+          if (side>0) idx.push(a,c,b,b,c,d);
+          else idx.push(a,b,c,b,d,c);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+      g.setIndex(idx); g.computeVertexNormals();
+      const m = new THREE.MeshStandardMaterial({
+        color: baseBladeColor,
+        metalness:.08,
+        roughness:.42,
+        side:THREE.DoubleSide,
+        transparent:true,
+        opacity:.97
+      });
+      const mesh = new THREE.Mesh(g,m);
+      mesh.userData.concept = conceptId;
+      mesh.userData.surfaceSide = side > 0 ? "upper" : "lower";
+      pickables.push(mesh);
+      return mesh;
+    }
+
+    function tubeFromPoints(points, color, radius=.026, opacity=1) {
+      const curve = new THREE.CatmullRomCurve3(points);
+      const g = new THREE.TubeGeometry(curve, Math.max(16, points.length*3), radius, 8, false);
+      const m = new THREE.MeshStandardMaterial({color, emissive:color, emissiveIntensity:.22, roughness:.35, transparent:opacity<1, opacity});
+      return new THREE.Mesh(g,m);
+    }
+
+    function loopTube(points, color, radius=.021) {
+      const curve = new THREE.CatmullRomCurve3(points, true);
+      const g = new THREE.TubeGeometry(curve, Math.max(24, points.length*3), radius, 8, true);
+      const m = new THREE.MeshStandardMaterial({color, emissive:color, emissiveIntensity:.18, roughness:.4});
+      return new THREE.Mesh(g,m);
+    }
+
+    function buildBlade(angle) {
+      const g = new THREE.Group();
+      g.rotation.z = angle;
+      g.userData.angle = angle;
+
+      const upper = makeSurface(1,"blade");
+      const lower = makeSurface(-1,"blade");
+      g.add(upper,lower);
+      g.userData.upper = upper;
+      g.userData.lower = lower;
+
+      const lePts=[], tePts=[], stackPts=[];
+      for (let i=0;i<=36;i++) {
+        const t=i/36;
+        lePts.push(meanPointAt(t,0));
+        tePts.push(meanPointAt(t,1));
+        stackPts.push(meanPointAt(t,.25));
+      }
+      const le = tubeFromPoints(lePts, 0x70d6ff, .033);
+      const te = tubeFromPoints(tePts, 0xff7d8a, .028);
+      le.visible=false; te.visible=false;
+      le.userData.concept="leading"; te.userData.concept="trailing";
+      pickables.push(le,te);
+      g.add(le,te);
+
+      const rootPts=[], tipPts=[];
+      for (let j=0;j<=34;j++) {
+        const u=j/34;
+        rootPts.push(pointAt(0,u,1));
+      }
+      for (let j=34;j>=0;j--) rootPts.push(pointAt(0,j/34,-1));
+      for (let j=0;j<=34;j++) tipPts.push(pointAt(1,j/34,1));
+      for (let j=34;j>=0;j--) tipPts.push(pointAt(1,j/34,-1));
+      const rootLoop=loopTube(rootPts,0x8be28b,.026);
+      const tipLoop=loopTube(tipPts,0xffc857,.03);
+      rootLoop.visible=false; tipLoop.visible=false;
+      rootLoop.userData.concept="root"; tipLoop.userData.concept="tip";
+      pickables.push(rootLoop,tipLoop);
+      g.add(rootLoop,tipLoop);
+
+      const chordT=.63;
+      const chord = tubeFromPoints([meanPointAt(chordT,0), meanPointAt(chordT,1)],0xffc857,.026);
+      chord.visible=false; chord.userData.concept="chord"; pickables.push(chord); g.add(chord);
+
+      const foilPts=[];
+      for(let j=0;j<=40;j++) foilPts.push(pointAt(chordT,j/40,1));
+      for(let j=40;j>=0;j--) foilPts.push(pointAt(chordT,j/40,-1));
+      const foil=loopTube(foilPts,0xffc857,.019);
+      foil.visible=false; foil.userData.concept="airfoil"; pickables.push(foil); g.add(foil);
+
+      const stack = tubeFromPoints(stackPts,0x70d6ff,.022,.9);
+      stack.visible=false; stack.userData.concept="sweep"; pickables.push(stack); g.add(stack);
+
+      const radial = tubeFromPoints([new THREE.Vector3(ROOT,0,0),new THREE.Vector3(R,0,0)],0xffc857,.017,.8);
+      radial.visible=false; radial.userData.concept="sweep"; pickables.push(radial); g.add(radial);
+
+      const dihedralRef = tubeFromPoints([new THREE.Vector3(ROOT,0,0),new THREE.Vector3(R,0,0)],0xffc857,.017,.75);
+      dihedralRef.visible=false; dihedralRef.userData.concept="dihedral"; pickables.push(dihedralRef); g.add(dihedralRef);
+      const dihedralCurve = tubeFromPoints(stackPts,0x70d6ff,.025,.95);
+      dihedralCurve.visible=false; dihedralCurve.userData.concept="dihedral"; pickables.push(dihedralCurve); g.add(dihedralCurve);
+
+      const twistGroup = new THREE.Group();
+      [0.18,.48,.78,.98].forEach(t => {
+        const pts=[];
+        for(let j=0;j<=28;j++) pts.push(pointAt(t,j/28,1));
+        for(let j=28;j>=0;j--) pts.push(pointAt(t,j/28,-1));
+        const lp=loopTube(pts,0xffc857,.015);
+        twistGroup.add(lp);
+      });
+      twistGroup.visible=false;
+      twistGroup.userData.concept="twist";
+      g.add(twistGroup);
+
+      const explodedSlices = new THREE.Group();
+      [0.12,.28,.44,.60,.76,.90].forEach((t,k) => {
+        const pts=[];
+        for(let j=0;j<=26;j++) pts.push(pointAt(t,j/26,1));
+        for(let j=26;j>=0;j--) pts.push(pointAt(t,j/26,-1));
+        const lp=loopTube(pts, k%2 ? 0x70d6ff : 0xffc857,.012);
+        lp.material.transparent=true;
+        lp.material.opacity=.62;
+        explodedSlices.add(lp);
+      });
+      explodedSlices.visible=false;
+      g.add(explodedSlices);
+      g.userData.explodedSlices=explodedSlices;
+
+      g.userData.helpers={le,te,rootLoop,tipLoop,chord,foil,stack,radial,dihedralRef,dihedralCurve,twistGroup};
+      bladeGroups.push(g);
+      rotor.add(g);
+      return g;
+    }
+
+    buildBlade(0);
+    buildBlade(Math.PI);
+
+    const hubGroup = new THREE.Group();
+    rotor.add(hubGroup);
+    const hubMat = new THREE.MeshStandardMaterial({color:0x536d82,metalness:.35,roughness:.34});
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.56,.62,.42,64),hubMat);
+    hub.rotation.x=Math.PI/2;
+    hub.userData.concept="hub"; pickables.push(hub); hubGroup.add(hub);
+    const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(.34,.48,.26,64),new THREE.MeshStandardMaterial({color:0x8197a8,metalness:.22,roughness:.38}));
+    hubCap.rotation.x=Math.PI/2; hubCap.position.z=.30;
+    hubCap.userData.concept="hub"; pickables.push(hubCap); hubGroup.add(hubCap);
+
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,1.2,32),new THREE.MeshStandardMaterial({color:0x33485a,metalness:.65,roughness:.24}));
+    shaft.rotation.x=Math.PI/2;
+    shaft.position.z=-.35;
+    hubGroup.add(shaft);
+
+    const plane = new THREE.Mesh(
+      new THREE.CircleGeometry(R+0.35,96),
+      new THREE.MeshBasicMaterial({color:0x70d6ff,transparent:true,opacity:.075,side:THREE.DoubleSide,depthWrite:false})
+    );
+    plane.visible=false;
+    plane.userData.concept="plane"; pickables.push(plane);
+    rotor.add(plane);
+
+    const planeRing = new THREE.Mesh(
+      new THREE.RingGeometry(R+.25,R+.30,128),
+      new THREE.MeshBasicMaterial({color:0x70d6ff,transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false})
+    );
+    planeRing.visible=false; rotor.add(planeRing);
+
+    const duct = new THREE.Group();
+    const ductWall = new THREE.Mesh(
+      new THREE.CylinderGeometry(R+.48,R+.48,.66,128,1,true),
+      new THREE.MeshStandardMaterial({color:0x70d6ff,transparent:true,opacity:.17,roughness:.35,metalness:.08,side:THREE.DoubleSide,depthWrite:false})
+    );
+    ductWall.rotation.x=Math.PI/2;
+    duct.add(ductWall);
+    const ductA = new THREE.Mesh(new THREE.TorusGeometry(R+.48,.12,16,128),new THREE.MeshStandardMaterial({color:0x70d6ff,transparent:true,opacity:.62,roughness:.35}));
+    ductA.position.z=.33;
+    const ductB = ductA.clone(); ductB.position.z=-.33;
+    duct.add(ductA,ductB);
+    duct.visible=false;
+    duct.userData.concept="duct";
+    rotor.add(duct);
+
+    const helixPts=[];
+    const turns=1.08, pitch=2.05, hR=R+.72;
+    for(let i=0;i<=150;i++) {
+      const q=i/150;
+      const a=q*Math.PI*2*turns;
+      helixPts.push(new THREE.Vector3(hR*Math.cos(a),hR*Math.sin(a),-pitch/2+pitch*q));
+    }
+    const helix=tubeFromPoints(helixPts,0xffc857,.025,.9);
+    helix.visible=false; helix.userData.concept="pitch"; pickables.push(helix); scene.add(helix);
+
+    highlightHelpers.plane=[plane,planeRing];
+    highlightHelpers.duct=[duct];
+    highlightHelpers.pitch=[helix];
+
+    function allBladeHelpers(name) {
+      return bladeGroups.map(b => b.userData.helpers[name]).filter(Boolean);
+    }
+
+    function resetAppearance() {
+      bladeGroups.forEach(b => {
+        [b.userData.upper,b.userData.lower].forEach(m => {
+          m.material.color.copy(baseBladeColor);
+          m.material.emissive.set(0x000000);
+          m.material.emissiveIntensity=0;
+          m.material.opacity=.97;
+        });
+        Object.values(b.userData.helpers).forEach(h => h.visible=false);
+      });
+      plane.visible=false; planeRing.visible=false; duct.visible=false; helix.visible=false;
+      hubMat.color.set(0x536d82);
+      hubMat.emissive.set(0x000000);
+      hubMat.emissiveIntensity=0;
+      hubCap.material.color.set(0x8197a8);
+      hubCap.material.emissive.set(0x000000);
+      hubCap.material.emissiveIntensity=0;
+    }
+
+    let activeConcept="leading";
+    function selectConcept(id, cameraAssist=false) {
+      if(!conceptMap[id]) return;
+      activeConcept=id;
+      resetAppearance();
+
+      document.querySelectorAll(".concept-btn").forEach(b => b.classList.toggle("active", b.dataset.id===id));
+      const c=conceptMap[id];
+      infoEn.textContent=c.en;
+      infoZh.textContent=c.zh;
+      infoDefinition.textContent=c.def;
+      infoBody.textContent=c.body;
+      infoEquation.textContent=c.eq;
+      infoBullets.innerHTML="";
+      c.bullets.forEach(v=>{ const li=document.createElement("li"); li.textContent=v; infoBullets.appendChild(li); });
+
+      const helperNames={
+        leading:"le", trailing:"te", root:"rootLoop", tip:"tipLoop", chord:"chord",
+        airfoil:"foil", twist:"twistGroup"
+      };
+      if(helperNames[id]) allBladeHelpers(helperNames[id]).forEach(h=>h.visible=true);
+
+      if(id==="sweep") {
+        allBladeHelpers("stack").forEach(h=>h.visible=true);
+        allBladeHelpers("radial").forEach(h=>h.visible=true);
+      }
+      if(id==="dihedral") {
+        allBladeHelpers("dihedralRef").forEach(h=>h.visible=true);
+        allBladeHelpers("dihedralCurve").forEach(h=>h.visible=true);
+        plane.visible=true; planeRing.visible=true;
+      }
+      if(id==="plane") { plane.visible=true; planeRing.visible=true; }
+      if(id==="duct") duct.visible=true;
+      if(id==="pitch") helix.visible=true;
+
+      if(id==="blade") {
+        bladeGroups.forEach(b=>[b.userData.upper,b.userData.lower].forEach(m=>{
+          m.material.color.copy(accent); m.material.emissive.copy(accent); m.material.emissiveIntensity=.08;
+        }));
+      }
+      if(id==="hub") {
+        hubMat.color.copy(accent2); hubMat.emissive.copy(accent2); hubMat.emissiveIntensity=.12;
+        hubCap.material.color.copy(accent2); hubCap.material.emissive.copy(accent2); hubCap.material.emissiveIntensity=.12;
+      }
+      if(id==="surfaces") {
+        bladeGroups.forEach(b=>{
+          b.userData.upper.material.color.set(0x70d6ff);
+          b.userData.upper.material.emissive.set(0x70d6ff);
+          b.userData.upper.material.emissiveIntensity=.05;
+          b.userData.lower.material.color.set(0xffc857);
+          b.userData.lower.material.emissive.set(0xffc857);
+          b.userData.lower.material.emissiveIntensity=.05;
+        });
+      }
+
+      status.innerHTML="<strong>" + c.en + " · " + c.zh + "：</strong>" + c.def;
+      infoAction.textContent = id==="sweep" ? "点“俯视”，比较黄色直径参考线和蓝色弯曲积叠线。" :
+                               id==="dihedral" ? "点“侧视”，看桨叶外段如何离开旋转平面。" :
+                               id==="twist" ? "开启“教学爆炸图”，多个翼型截面的角度差会更容易观察。" :
+                               id==="duct" ? "旋转视角，确认涵道是包在整副桨外面的独立环形结构。" :
+                               "拖动模型，从不同角度确认高亮部分到底是“线、面、截面还是整件”。";
+
+      if(cameraAssist) {
+        if(id==="sweep" || id==="plane") setCamera(new THREE.Vector3(0,0,9.6), new THREE.Vector3(0,0,0));
+        if(id==="dihedral") setCamera(new THREE.Vector3(0,-9.2,1.4), new THREE.Vector3(0,0,.15));
+        if(id==="airfoil" || id==="chord" || id==="twist") setCamera(new THREE.Vector3(5.8,-7.8,4.8), new THREE.Vector3(.5,0,.1));
+      }
+    }
+
+    function setCamera(pos,target) {
+      camera.position.copy(pos);
+      controls.target.copy(target);
+      controls.update();
+    }
+
+    let exploded=false;
+    document.getElementById("explode").addEventListener("click", e => {
+      exploded=!exploded;
+      e.currentTarget.classList.toggle("on",exploded);
+      bladeGroups.forEach(b=>b.userData.explodedSlices.visible=exploded);
+      status.innerHTML = exploded
+        ? "<strong>教学爆炸图：</strong>桨毂与两片桨叶被教学性分开，同时显示多组翼型截面。它用于理解几何，不代表真实制造装配关系。"
+        : "<strong>普通视图：</strong>已恢复完整螺旋桨。";
+    });
+
+    let auto=false;
+    document.getElementById("autoRotate").addEventListener("click", e=>{
+      auto=!auto; controls.autoRotate=auto; e.currentTarget.classList.toggle("on",auto);
+    });
+    document.getElementById("resetView").addEventListener("click",()=>setCamera(new THREE.Vector3(5.8,-7.8,5.4),new THREE.Vector3(0,0,0)));
+    document.getElementById("topView").addEventListener("click",()=>setCamera(new THREE.Vector3(0,0,9.8),new THREE.Vector3(0,0,0)));
+    document.getElementById("sideView").addEventListener("click",()=>setCamera(new THREE.Vector3(0,-9.4,1.0),new THREE.Vector3(0,0,.12)));
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    function setMouse(ev) {
+      const r=renderer.domElement.getBoundingClientRect();
+      mouse.x=((ev.clientX-r.left)/r.width)*2-1;
+      mouse.y=-((ev.clientY-r.top)/r.height)*2+1;
+      raycaster.setFromCamera(mouse,camera);
+    }
+    renderer.domElement.addEventListener("pointermove",ev=>{
+      setMouse(ev);
+      const hits=raycaster.intersectObjects(pickables,true).filter(h=>h.object.visible);
+      const hit=hits.find(h=>h.object.userData.concept || h.object.parent?.userData.concept);
+      if(hit) {
+        const id=hit.object.userData.concept || hit.object.parent.userData.concept;
+        const c=conceptMap[id];
+        if(c) {
+          tooltip.style.display="block";
+          tooltip.style.left=ev.clientX+"px"; tooltip.style.top=ev.clientY+"px";
+          tooltip.textContent=c.en+" · "+c.zh;
+          renderer.domElement.style.cursor="pointer";
+          return;
+        }
+      }
+      tooltip.style.display="none";
+      renderer.domElement.style.cursor="grab";
+    });
+    renderer.domElement.addEventListener("pointerleave",()=>{tooltip.style.display="none";});
+    renderer.domElement.addEventListener("click",ev=>{
+      setMouse(ev);
+      const hits=raycaster.intersectObjects(pickables,true).filter(h=>h.object.visible);
+      const hit=hits.find(h=>h.object.userData.concept || h.object.parent?.userData.concept);
+      if(hit) {
+        const id=hit.object.userData.concept || hit.object.parent.userData.concept;
+        if(conceptMap[id]) selectConcept(id,false);
+      }
+    });
+
+    function animateExplode() {
+      bladeGroups.forEach((b,i)=>{
+        const a=b.userData.angle;
+        const tx=exploded ? Math.cos(a)*.78 : 0;
+        const ty=exploded ? Math.sin(a)*.78 : 0;
+        const tz=exploded ? (i===0 ? .42 : -.42) : 0;
+        b.position.x += (tx-b.position.x)*.09;
+        b.position.y += (ty-b.position.y)*.09;
+        b.position.z += (tz-b.position.z)*.09;
+      });
+      const hz=exploded ? -1.0 : 0;
+      hubGroup.position.z += (hz-hubGroup.position.z)*.09;
+    }
+
+    function resize() {
+      const w=holder.clientWidth, h=holder.clientHeight;
+      if(!w||!h) return;
+      renderer.setSize(w,h,false);
+      camera.aspect=w/h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize",resize);
+    new ResizeObserver(resize).observe(holder);
+    resize();
+
+    function tick() {
+      requestAnimationFrame(tick);
+      animateExplode();
+      controls.update();
+      renderer.render(scene,camera);
+    }
+    selectConcept("leading",false);
+    tick();
+  </script>
+</body>
+</html>
