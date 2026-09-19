@@ -275,10 +275,10 @@
         <div class="brand-mark">✦</div>
         <div>
           <div class="kicker">Propeller Anatomy · Part 01</div>
-          <h1>螺旋桨基础概念 · 三维交互教程</h1>
+          <h1>螺旋桨基础概念 · XOAR9x7 实体交互教程</h1>
         </div>
       </div>
-      <div class="header-note">点击左侧术语或直接点击三维模型。拖动旋转 · 滚轮缩放 · 右键平移。模型为教学几何，不对应某一款大疆量产桨。</div>
+      <div class="header-note">点击左侧术语或直接点击三维模型。拖动旋转 · 滚轮缩放 · 右键平移。当前主模型直接来自你上传的 XOAR9x7.stl；辅助线和涵道仅用于教学说明。</div>
     </header>
 
     <main class="workspace">
@@ -325,526 +325,138 @@
   <div class="tooltip" id="tooltip"></div>
 
   <script type="module">
-    import * as THREE from "three";
-    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-    const concepts = [
-      { id:"blade", en:"Blade", zh:"桨叶", def:"从桨毂向外延伸、真正与空气交换动量的旋转翼面。", body:"把一片螺旋桨桨叶理解成“旋转的机翼”最重要。它不是平板，而是由很多不同半径位置的翼型截面连续连接而成。", eq:"Blade = airfoil sections + chord(r) + twist(r) + spatial stacking", bullets:["真实桨叶通常沿半径改变弦长和扭转角。","气动力主要来自压力面与吸力面之间的压力差。","噪声研究常进一步关注桨尖、尾缘和非定常载荷。"] },
-      { id:"hub", en:"Hub", zh:"桨毂", def:"螺旋桨中心与电机轴连接的实体区域。", body:"桨毂负责把电机扭矩传给桨叶。对小型无人机，桨毂往往与桨叶一体成形；折叠桨则会增加铰接结构。", eq:"Torque: motor → hub → blade", bullets:["这里不是主要升力区域，但决定连接与载荷传递。","桨根附近圆周速度较低。","爆炸图模式会把桨毂与两片桨叶教学性分开。"] },
-      { id:"root", en:"Root", zh:"桨根", def:"桨叶最靠近桨毂的区域，是桨叶从中心向外过渡的起始段。", body:"桨根承受较大的弯矩，但因为 r 小，局部线速度较低。它的几何通常比外段更厚、更偏结构设计。", eq:"V_t = ωr  →  r 越小，局部圆周速度越低", bullets:["桨根不等于桨毂：一个是叶片区域，一个是中心连接件。","结构强度需求在桨根很重要。","叶素气动分析往往从某个非零 r/R 开始。"] },
-      { id:"tip", en:"Tip", zh:"桨尖", def:"桨叶半径最外端的区域，局部圆周速度通常最高。", body:"桨尖是无人机气动噪声研究的重点区域。压力面气流会绕向吸力面并形成桨尖涡；高速度与涡结构共同使这里对噪声非常敏感。", eq:"V_tip ≈ ωR", bullets:["桨尖涡 tip vortex 在这里形成。","后掠、收窄、上反/下反都常发生在外段。","很多低噪桨会对桨尖载荷进行“卸载”。"] },
-      { id:"leading", en:"Leading edge", zh:"前缘", def:"桨叶旋转时，翼型截面最先迎接来流的那条边。", body:"前缘是一条沿展向延伸的空间曲线。它不是“最外面的边”，而是每个翼型截面最前方的点连成的边。", eq:"Airflow meets: leading edge → airfoil → trailing edge", bullets:["本模型中高亮的蓝色空间曲线就是前缘。","前缘曲率和表面质量会影响分离与噪声。","看专利图时，LE 常写作 leading edge。"] },
-      { id:"trailing", en:"Trailing edge", zh:"后缘", def:"气流经过翼型后，从桨叶离开的那条细边。", body:"后缘同样是沿半径延伸的空间曲线。湍流边界层经过后缘散射，是宽带噪声的重要来源之一。", eq:"Boundary-layer turbulence + trailing edge → broadband noise", bullets:["后缘通常比前缘尖薄。","尾缘噪声是旋翼宽带噪声研究的重要分支。","不要把“后缘”与“后掠 sweep”混淆。"] },
-      { id:"chord", en:"Chord / chord length", zh:"弦 / 弦长 c", def:"在某一个翼型截面上，从前缘到后缘连接的参考直线；其长度就是弦长 c。", body:"弦并不是桨叶上真实存在的一根杆。把桨叶在某个 r/R 位置切一刀，前缘到后缘的直线就是弦线。不同半径处的 c 通常不同。", eq:"c = |LE − TE|   ，常写成 c(r) 或 c/R", bullets:["高亮黄色线表示某个 r/R 截面的弦线。","弦长决定局部叶片有多“宽”。","CAD 重建常用多个 r/R 截面的 c(r) 来放样。"] },
-      { id:"airfoil", en:"Airfoil section", zh:"翼型截面", def:"沿近似垂直于桨叶展向的方向切开桨叶得到的二维截面形状。", body:"一片真实桨叶可以理解为很多翼型截面沿半径排布并连续放样。截面有前缘、后缘、弦线、厚度和弯度。", eq:"3D blade ≈ loft{ airfoil(r_i) }", bullets:["黄色闭合线显示一个示例截面。","不同 r/R 处翼型可以相同，也可以渐变。","你前面 CAD 的多个 section，本质就是这些翼型截面。"] },
-      { id:"twist", en:"Twist", zh:"扭转", def:"不同半径位置的翼型截面具有不同安装角，连起来后桨叶呈现沿展向逐渐扭转。", body:"因为 V_t = ωr，桨尖比桨根移动得快。若所有截面角度相同，局部迎角会很不均匀，所以实际桨叶通常从根到尖逐渐减小几何安装角。", eq:"θ = θ(r)   通常：θ_root > θ_tip", bullets:["高亮多个截面可以直观看到角度在变化。","扭转 twist 与整体桨距 pitch 有联系，但不是同一个概念。","专利里的“攻角/安装角径向分布”常对应这一类几何。"] },
-      { id:"pitch", en:"Pitch", zh:"桨距", def:"把螺旋桨想成螺丝时，理论上旋转一圈沿轴向前进的几何距离。", body:"桨距是描述螺旋几何的量，不是单纯等于某一个截面的扭转角。网页用一条黄色螺旋线演示“旋转一圈同时前进”的概念。", eq:"Geometric pitch ≈ 2πr · tan(β)  （特定截面近似）", bullets:["固定桨距桨仍然具有沿半径的扭转。","例如“10×4.5”常表示直径约 10 英寸、名义桨距约 4.5 英寸。","实际前进距离会受滑移和工作状态影响。"] },
-      { id:"sweep", en:"Sweep", zh:"后掠", def:"从旋转轴方向俯视时，桨叶的参考线在旋转平面内向前或向后弯曲。", body:"后掠是“平面内”的空间偏移。低噪桨常在外段做后掠，使桨尖像弯刀。它与弦长、扭转、上反/下反是不同维度的设计变量。", eq:"Sweep = in-plane offset of stacking line", bullets:["黄色直线是未后掠的径向参考。","蓝色曲线是本模型的四分之一弦积叠线。","从俯视视角最容易理解后掠。"] },
-      { id:"dihedral", en:"Dihedral / Anhedral", zh:"上反 / 下反", def:"桨叶相对旋转平面向轴向一侧或另一侧弯曲，是“平面外”的三维形态。", body:"与 sweep 不同，上反/下反要从侧面看。本模型外段轻微上翘，用来演示三维桨尖。大疆新专利中出现的主体上反、桨尖下反，就属于这类空间设计。", eq:"Dihedral/Anhedral = out-of-plane offset", bullets:["俯视可能看不出，切换“侧视”最清楚。","它可以改变桨尖涡、载荷和结构间隙。","三维低噪桨常同时存在 sweep + dihedral/anhedral + twist。"] },
-      { id:"plane", en:"Rotation plane", zh:"旋转平面", def:"螺旋桨绕转轴旋转时所对应的基准平面，通常垂直于电机轴。", body:"很多几何概念都要以旋转平面为参照：后掠发生在平面内，上反/下反发生在平面外。", eq:"Rotor axis ⟂ rotation plane", bullets:["蓝色半透明圆盘表示理想旋转平面。","真实扭转桨叶的表面并不会完全落在该平面内。","分析桨尖间隙和涵道时也常以此平面为基准。"] },
-      { id:"surfaces", en:"Pressure / suction surface", zh:"压力面 / 吸力面", def:"翼型两侧的两个主要表面；在典型正推力工况下，两侧存在压力差并产生轴向气动力。", body:"为了教学，这里把两侧表面分别着色。真实工况下哪一侧是压力面/吸力面取决于旋向、安装角与来流，但核心概念是两侧压力分布不同。", eq:"Δp across blade surface → aerodynamic force", bullets:["蓝色与黄色分别显示两侧表面。","桨尖处两侧压力试图绕流连通，会形成 tip vortex。","载荷噪声与随时间变化的表面压力密切相关。"] },
-      { id:"duct", en:"Duct / shroud", zh:"涵道 / 外罩", def:"包围螺旋桨外缘的一圈环形气动结构；它不是桨叶自身的一部分。", body:"开放桨没有外圈，而涵道风扇用环形外罩约束桨尖附近流动。涵道可能提高某些工况下的效率、改变噪声和安全性，但也会引入重量、阻力和转子—涵道相互作用。", eq:"Open propeller + surrounding annular duct → ducted fan", bullets:["选择该项后会出现半透明环形外罩。","涵道和“桨尖”是两个不同实体。","涵道并不意味着在所有工况下都更安静。"] }
-    ];
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-    const conceptMap = Object.fromEntries(concepts.map(c => [c.id, c]));
-    const list = document.getElementById("conceptList");
-    concepts.forEach(c => {
-      const b = document.createElement("button");
-      b.className = "concept-btn";
-      b.dataset.id = c.id;
-      b.innerHTML = '<span class="en">' + c.en + '</span><span class="zh">' + c.zh + '</span>';
-      b.addEventListener("click", () => selectConcept(c.id, true));
-      list.appendChild(b);
-    });
+const concepts=[
+{id:"blade",en:"Blade",zh:"桨叶",def:"从桨毂向外延伸、与空气交换动量的旋转翼面。",body:"屏幕上的桨叶现在直接来自你上传的 XOAR9x7.stl，而不是程序生成的示意叶片。把它理解成很多翼型截面沿半径连续排列，是理解弦长、扭转、后掠的核心。",eq:"3D blade ≈ airfoil sections distributed along r",bullets:["真实 STL 是一整副双叶桨的封闭实体。","网页仅做轻量化网格重采样以提高在线加载速度。","原 STL：约 225 × 49 × 12.6 mm，58,102 个三角面。"]},
+{id:"hub",en:"Hub",zh:"桨毂",def:"螺旋桨中心与电机轴连接、传递扭矩的实体区域。",body:"页面按真实 STL 的径向位置把中心区域从同一个网格中分离高亮。",eq:"motor torque → hub → blade",bullets:["桨毂和桨根不是同一个概念。","爆炸图中的分件是教学切分，不表示原 STL 真能拆开。"]},
+{id:"root",en:"Root",zh:"桨根",def:"桨叶靠近桨毂的过渡区域。",body:"桨根局部圆周速度较低，但承担很大的结构弯矩。蓝黄色高亮来自 XOAR9x7 网格本身。",eq:"V_t = ωr",bullets:["r 越小，局部圆周速度越低。","结构强度设计在桨根尤其重要。"]},
+{id:"tip",en:"Tip",zh:"桨尖",def:"桨叶半径最外端，通常也是局部圆周速度最高的区域。",body:"桨尖是无人机气动噪声控制的重点区域。压力面气流绕向吸力面会形成桨尖涡。",eq:"V_tip ≈ ωR",bullets:["后掠、收窄、上反/下反经常集中在外段。","tip vortex 与桨尖噪声高度相关。"]},
+{id:"leading",en:"Leading edge",zh:"前缘",def:"在给定旋转方向下，翼型最先迎向切向来流的边。",body:"蓝色边缘曲线由 XOAR9x7 STL 的外轮廓按径向站位直接采样。前缘依赖旋向；上方可以切换 CCW / CW。",eq:"rotation direction determines which geometric edge meets flow first",bullets:["默认按 CCW 标注。","如果这副桨实际规定为另一旋向，切换旋向即可。"]},
+{id:"trailing",en:"Trailing edge",zh:"后缘",def:"气流经过翼型后离开的边。",body:"后缘也从真实 STL 外轮廓提取。湍流边界层经过后缘散射，是宽带噪声的重要来源之一。",eq:"boundary-layer turbulence + trailing edge → broadband noise",bullets:["后缘通常比前缘更薄。","Trailing edge 与 Sweep 后掠完全不是一回事。"]},
+{id:"chord",en:"Chord / chord length",zh:"弦 / 弦长 c",def:"某个径向截面上，连接前缘与后缘的参考直线；其长度就是弦长。",body:"黄色线跨过 XOAR9x7 约 0.70R 处的真实叶片宽度。弦并不是实体中存在的一根杆。",eq:"c = |LE − TE|,  c = c(r)",bullets:["弦长就是这一截叶片有多宽。","不同 r/R 的弦长通常不同。"]},
+{id:"airfoil",en:"Airfoil section",zh:"翼型截面",def:"用近似垂直于展向的平面切开桨叶得到的二维轮廓。",body:"这里不是画一个假的 NACA 翼型，而是直接让切平面与 XOAR9x7 三角网格求交，显示真实截面。",eq:"section = STL mesh ∩ cutting plane",bullets:["截面包含前缘、后缘、厚度和弦线。","CAD Loft/放样本质上就是把很多这种截面连接起来。"]},
+{id:"twist",en:"Twist",zh:"扭转",def:"不同半径位置的翼型截面具有不同几何安装角。",body:"页面会同时从真实 STL 切出多个截面。斜着看时，你可以直接比较它们的倾角变化。",eq:"θ = θ(r)",bullets:["扭转用于适应 V_t = ωr 带来的局部速度差。","Twist 和名义 Pitch 有联系，但不是同一个量。"]},
+{id:"pitch",en:"Pitch",zh:"桨距",def:"把螺旋桨想成螺丝时，每转一圈对应的理论轴向前进距离。",body:"黄色螺旋线只负责解释实体概念。仅凭 STL 并不能在不规定定义与工作状态的情况下唯一得到厂家名义桨距。",eq:"P ≈ 2πr · tan(β)  (local geometric view)",bullets:["固定桨距桨仍然具有沿半径的扭转。","实际前进距离会受滑移和工况影响。"]},
+{id:"sweep",en:"Sweep",zh:"后掠",def:"从转轴方向俯视，桨叶参考线在旋转平面内偏离纯径向直线。",body:"蓝色曲线由 XOAR9x7 各径向站位前后缘中点构成；黄色直线是没有后掠的纯径向参考。",eq:"sweep = in-plane offset of stacking line",bullets:["切到“俯视”最容易理解。","后掠与扭转是不同的空间自由度。"]},
+{id:"dihedral",en:"Dihedral / Anhedral",zh:"上反 / 下反",def:"桨叶相对旋转平面向轴向方向偏移，是平面外弯曲。",body:"透明圆盘是旋转平面，蓝色真实中线显示 XOAR9x7 外段是否明显离开该平面。这副模型并没有极端夸张的三维弯桨尖。",eq:"out-of-plane offset relative to rotor plane",bullets:["用“侧视”最直观。","不要与俯视图里的 Sweep 混淆。"]},
+{id:"plane",en:"Rotation plane",zh:"旋转平面",def:"垂直于转轴、作为旋翼几何参照的基准平面。",body:"透明蓝色圆盘表示旋转平面。后掠发生在平面内；上反/下反则离开平面。",eq:"rotor axis ⟂ rotation plane",bullets:["由于扭转，真实叶片表面不会完全落在这个平面上。"]},
+{id:"surfaces",en:"Pressure / suction surface",zh:"压力面 / 吸力面",def:"翼型两侧的主要表面；工作时两侧压力差产生气动力。",body:"页面按三角面法向的轴向分量把 STL 两侧分别染色。真正的压力面/吸力面还要结合这副桨的安装方向、旋向和工况确认。",eq:"Δp across blade surfaces → aerodynamic loading",bullets:["桨尖处两侧压差会驱动绕流形成 tip vortex。","做 CFD 前应先确认真实旋向和正反面。"]},
+{id:"duct",en:"Duct / shroud",zh:"涵道 / 外罩",def:"包围螺旋桨外缘的环形气动结构，不属于桨叶本体。",body:"XOAR9x7.stl 本身是开放桨，没有涵道。这里出现的透明环是额外教学叠加，让你直观看懂涵道到底是什么实体。",eq:"open propeller + annular shroud → ducted fan",bullets:["涵道改变桨尖附近流动及 rotor–duct interaction。","涵道不意味着所有工况下一定更安静。"]}
+];
+const conceptMap=Object.fromEntries(concepts.map(c=>[c.id,c]));
+const list=document.getElementById("conceptList");
+list.innerHTML="";
+for(const c of concepts){const b=document.createElement("button");b.className="concept-btn";b.dataset.id=c.id;b.innerHTML='<span class="en">'+c.en+'</span><span class="zh">'+c.zh+'</span>';b.onclick=()=>selectConcept(c.id,true);list.appendChild(b)}
+const infoEn=document.getElementById("infoEn"),infoZh=document.getElementById("infoZh"),infoDefinition=document.getElementById("infoDefinition"),infoBody=document.getElementById("infoBody"),infoEquation=document.getElementById("infoEquation"),infoBullets=document.getElementById("infoBullets"),infoAction=document.getElementById("infoAction"),status=document.getElementById("status"),tooltip=document.getElementById("tooltip");
+const holder=document.getElementById("three");
+status.innerHTML="<strong>正在加载：</strong>XOAR9x7.stl 的网页优化网格……";
 
-    const infoEn = document.getElementById("infoEn");
-    const infoZh = document.getElementById("infoZh");
-    const infoDefinition = document.getElementById("infoDefinition");
-    const infoBody = document.getElementById("infoBody");
-    const infoEquation = document.getElementById("infoEquation");
-    const infoBullets = document.getElementById("infoBullets");
-    const infoAction = document.getElementById("infoAction");
-    const status = document.getElementById("status");
-    const tooltip = document.getElementById("tooltip");
+const toolbar=document.querySelector(".toolbar");
+const dirBtn=document.createElement("button");dirBtn.className="tool";dirBtn.id="rotationDir";dirBtn.textContent="旋向 CCW";toolbar.appendChild(dirBtn);
 
-    const holder = document.getElementById("three");
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x07111f, 0.026);
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x07111f,.034);
+const camera=new THREE.PerspectiveCamera(40,1,.05,80);camera.position.set(5.2,-6.4,4.2);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;holder.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.07;controls.target.set(0,0,0);controls.minDistance=3.5;controls.maxDistance=16;controls.autoRotateSpeed=.85;
+scene.add(new THREE.HemisphereLight(0xd2f0ff,0x0b1724,1.5));
+const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(4,-5,7);scene.add(key);
+const fill=new THREE.DirectionalLight(0x62d4ff,1.45);fill.position.set(-5,4,3);scene.add(fill);
+const rim=new THREE.PointLight(0xffc857,18,18);rim.position.set(0,4,-2);scene.add(rim);
+const grid=new THREE.GridHelper(12,24,0x20415d,0x153047);grid.rotation.x=Math.PI/2;grid.position.z=-1.25;grid.material.transparent=true;grid.material.opacity=.23;scene.add(grid);
 
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-    camera.position.set(5.8, -7.8, 5.4);
+const rotor=new THREE.Group();scene.add(rotor);
+const helperGroup=new THREE.Group(),overlayGroup=new THREE.Group(),explodeGroup=new THREE.Group();rotor.add(helperGroup,overlayGroup,explodeGroup);
+const pickables=[];
+let pos,indexArray,fullMesh,baseGeo,R=3.2,hubR=.43,rootEnd=1.02,tipStart=2.75,rotationDir=1,activeConcept="blade",exploded=false,auto=false;
+const baseMat=new THREE.MeshPhysicalMaterial({color:0xa3b8c7,metalness:.12,roughness:.27,clearcoat:.5,clearcoatRoughness:.18,side:THREE.DoubleSide});
+const hiMat=new THREE.MeshStandardMaterial({color:0x62d4ff,emissive:0x62d4ff,emissiveIntensity:.3,roughness:.3,transparent:true,opacity:.76,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+const hotMat=hiMat.clone();hotMat.color.set(0xffc857);hotMat.emissive.set(0xffc857);
+let H={};
 
-    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(holder.clientWidth, holder.clientHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-    holder.appendChild(renderer.domElement);
+async function loadMesh(){
+ const r=await fetch("assets/XOAR9x7_web.qmesh.b64",{cache:"force-cache"});if(!r.ok)throw new Error("mesh asset HTTP "+r.status);
+ const txt=(await r.text()).trim();const gz=Uint8Array.from(atob(txt),x=>x.charCodeAt(0));
+ if(!("DecompressionStream" in window))throw new Error("浏览器不支持 gzip DecompressionStream");
+ const ab=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+ const dv=new DataView(ab);if(String.fromCharCode(...new Uint8Array(ab,0,4))!=="PRP1")throw new Error("mesh format error");
+ const nv=dv.getUint32(4,true),nf=dv.getUint32(8,true);let o=12;
+ const mn=[dv.getFloat32(o,true),dv.getFloat32(o+4,true),dv.getFloat32(o+8,true)];o+=12;
+ const mx=[dv.getFloat32(o,true),dv.getFloat32(o+4,true),dv.getFloat32(o+8,true)];o+=12;
+ const q=new Uint16Array(ab,o,nv*3);o+=nv*3*2;indexArray=new Uint16Array(ab,o,nf*3);
+ const raw=new Float32Array(nv*3);let maxr=0;
+ for(let i=0;i<nv;i++){const x=mn[0]+q[i*3]/65535*(mx[0]-mn[0]),y=mn[1]+q[i*3+1]/65535*(mx[1]-mn[1]),z=mn[2]+q[i*3+2]/65535*(mx[2]-mn[2]);raw[i*3]=x;raw[i*3+1]=y;raw[i*3+2]=z;maxr=Math.max(maxr,Math.hypot(x,y))}
+ let zsum=0,zn=0;for(let i=0;i<nv;i++){if(Math.hypot(raw[i*3],raw[i*3+1])<maxr*.13){zsum+=raw[i*3+2];zn++}}
+ const z0=zn?zsum/zn:0,scale=3.2/maxr;R=3.2;hubR=.135*R;rootEnd=.32*R;tipStart=.86*R;
+ pos=new Float32Array(nv*3);for(let i=0;i<nv;i++){pos[i*3]=raw[i*3]*scale;pos[i*3+1]=raw[i*3+1]*scale;pos[i*3+2]=(raw[i*3+2]-z0)*scale}
+ baseGeo=new THREE.BufferGeometry();baseGeo.setAttribute("position",new THREE.BufferAttribute(pos,3));baseGeo.setIndex(new THREE.BufferAttribute(indexArray,1));baseGeo.computeVertexNormals();baseGeo.computeBoundingSphere();
+ fullMesh=new THREE.Mesh(baseGeo,baseMat);rotor.add(fullMesh);pickables.push(fullMesh);
+ buildFeatures();
+ status.innerHTML="<strong>XOAR9x7 已加载：</strong>"+nv.toLocaleString()+" vertices · "+nf.toLocaleString()+" triangles（网页优化网格）";
+ selectConcept("blade",false);
+}
+const P=i=>new THREE.Vector3(pos[i*3],pos[i*3+1],pos[i*3+2]);
+function tri(f){const a=indexArray[f*3],b=indexArray[f*3+1],c=indexArray[f*3+2],A=P(a),B=P(b),C=P(c),cent=A.clone().add(B).add(C).multiplyScalar(1/3),n=B.clone().sub(A).cross(C.clone().sub(A)).normalize();return{a,b,c,A,B,C,cent,n}}
+function subset(pred,mat=hiMat,concept=null,parent=overlayGroup){const ids=[];for(let f=0;f<indexArray.length/3;f++){const t=tri(f);if(pred(t))ids.push(t.a,t.b,t.c)}const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setIndex(ids);g.computeVertexNormals();const m=new THREE.Mesh(g,mat.clone());m.visible=false;m.renderOrder=5;if(concept)m.userData.concept=concept;parent.add(m);pickables.push(m);return m}
+function tube(points,color=0x62d4ff,r=.022,concept=null){if(points.length<2)return null;const g=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),Math.max(24,points.length*3),r,8,false);const m=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.25,roughness:.28});const x=new THREE.Mesh(g,m);x.visible=false;x.renderOrder=8;if(concept)x.userData.concept=concept;helperGroup.add(x);pickables.push(x);return x}
+function extrema(sign,n=30){const a=[],b=[],mid=[];for(let s=0;s<n;s++){const rt=R*(.22+.75*s/(n-1)),w=R*.018;let ai=-1,bi=-1,as=-1e9,bs=1e9;for(let i=0;i<pos.length/3;i++){const x=pos[i*3],y=pos[i*3+1];if((x>=0?1:-1)!==sign)continue;const rr=Math.hypot(x,y);if(Math.abs(rr-rt)>w)continue;const sc=sign*y;if(sc>as){as=sc;ai=i}if(sc<bs){bs=sc;bi=i}}if(ai>=0&&bi>=0){const A=P(ai),B=P(bi);a.push(A);b.push(B);mid.push(A.clone().add(B).multiplyScalar(.5))}}return{a,b,mid}}
+function section(x0,color=0xffc857){const pts=[],eps=1e-6;const cross=(A,B)=>{const da=A.x-x0,db=B.x-x0;if(da*db>0||Math.abs(B.x-A.x)<eps)return null;const t=(x0-A.x)/(B.x-A.x);return t>=-eps&&t<=1+eps?A.clone().lerp(B,t):null};for(let f=0;f<indexArray.length/3;f++){const{A,B,C}=tri(f);if(Math.max(A.x,B.x,C.x)<x0||Math.min(A.x,B.x,C.x)>x0)continue;const arr=[cross(A,B),cross(B,C),cross(C,A)].filter(Boolean),u=[];for(const p of arr)if(!u.some(q=>q.distanceToSquared(p)<1e-8))u.push(p);if(u.length>=2)pts.push(u[0],u[1])}const g=new THREE.BufferGeometry().setFromPoints(pts),l=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.98}));l.visible=false;l.renderOrder=9;helperGroup.add(l);return l}
+function buildFeatures(){
+ const hub=subset(t=>Math.hypot(t.cent.x,t.cent.y)<hubR,hotMat,"hub");
+ const rootHi=subset(t=>{const r=Math.hypot(t.cent.x,t.cent.y);return r>=hubR&&r<rootEnd},hotMat,"root");
+ const tipHi=subset(t=>Math.hypot(t.cent.x,t.cent.y)>tipStart,hotMat,"tip");
+ const upper=subset(t=>Math.hypot(t.cent.x,t.cent.y)>hubR&&t.n.z>=0,hiMat,"surfaces");
+ const lower=subset(t=>Math.hypot(t.cent.x,t.cent.y)>hubR&&t.n.z<0,hotMat,"surfaces");
+ const ep=extrema(1),en=extrema(-1);
+ const leadCCW=[tube(ep.a,0x62d4ff,.023,"leading"),tube(en.a,0x62d4ff,.023,"leading")];
+ const trailCCW=[tube(ep.b,0xff7b86,.020,"trailing"),tube(en.b,0xff7b86,.020,"trailing")];
+ const ci=Math.floor(ep.a.length*.64),chord=tube([ep.a[ci],ep.b[ci]],0xffc857,.023,"chord");
+ const airfoil=section(ep.mid[ci].x,0xffc857);
+ const twistGroup=new THREE.Group();helperGroup.add(twistGroup);for(const f of [.38,.55,.70,.84]){const l=section(R*f,0xffc857);helperGroup.remove(l);l.visible=true;twistGroup.add(l)}twistGroup.visible=false;
+ const sweepCurve=tube(ep.mid,0x62d4ff,.018),radial=tube([new THREE.Vector3(R*.2,0,0),new THREE.Vector3(R*.99,0,0)],0xffc857,.014);
+ const plane=new THREE.Mesh(new THREE.CircleGeometry(R*1.045,96),new THREE.MeshBasicMaterial({color:0x62d4ff,transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false}));plane.visible=false;helperGroup.add(plane);
+ const ring=new THREE.Mesh(new THREE.RingGeometry(R*1.025,R*1.035,128),new THREE.MeshBasicMaterial({color:0x62d4ff,transparent:true,opacity:.45,side:THREE.DoubleSide,depthWrite:false}));ring.visible=false;helperGroup.add(ring);
+ const diCurve=tube(ep.mid,0x62d4ff,.018);
+ const duct=new THREE.Group(),wall=new THREE.Mesh(new THREE.CylinderGeometry(R*1.075,R*1.075,.62,128,1,true),new THREE.MeshPhysicalMaterial({color:0x62d4ff,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false,roughness:.25}));wall.rotation.x=Math.PI/2;const ta=new THREE.Mesh(new THREE.TorusGeometry(R*1.075,.10,16,128),new THREE.MeshStandardMaterial({color:0x62d4ff,transparent:true,opacity:.65}));ta.position.z=.31;const tb=ta.clone();tb.position.z=-.31;duct.add(wall,ta,tb);duct.visible=false;helperGroup.add(duct);for(const x of [wall,ta,tb]){x.userData.concept="duct";pickables.push(x)}
+ const hp=[];for(let i=0;i<=140;i++){const q=i/140,a=q*Math.PI*2,r=R*.73;hp.push(new THREE.Vector3(r*Math.cos(a),r*Math.sin(a),-1+2*q))}const helix=tube(hp,0xffc857,.018,"pitch");
+ H={hub,root:rootHi,tip:tipHi,upper,lower,leadCCW,trailCCW,chord,airfoil,twistGroup,sweep:[sweepCurve,radial],dihedral:[diCurve,plane,ring],plane:[plane,ring],duct,helix};
+ buildExplosion();
+}
+function buildExplosion(){const p=subset(t=>t.cent.x>hubR*.45,baseMat,null,explodeGroup),n=subset(t=>t.cent.x<-hubR*.45,baseMat,null,explodeGroup),h=subset(t=>Math.abs(t.cent.x)<=hubR*.45,baseMat,null,explodeGroup);p.userData.target=new THREE.Vector3(.68,0,.34);n.userData.target=new THREE.Vector3(-.68,0,-.34);h.userData.target=new THREE.Vector3(0,0,-.72);for(const x of explodeGroup.children)x.visible=false}
+function hideAll(){for(const x of overlayGroup.children)x.visible=false;for(const x of helperGroup.children)x.visible=false;if(H.twistGroup)H.twistGroup.visible=false;if(fullMesh){fullMesh.material.color.set(0xa3b8c7);fullMesh.material.emissive.set(0);fullMesh.material.emissiveIntensity=0}}
+function show(x){if(Array.isArray(x))x.forEach(show);else if(x)x.visible=true}
+function showEdge(arr,color){for(const x of arr){x.material.color.set(color);x.material.emissive.set(color);x.visible=true}}
+function selectConcept(id,assist=false){if(!conceptMap[id]||!baseGeo||exploded)return;activeConcept=id;hideAll();document.querySelectorAll(".concept-btn").forEach(b=>b.classList.toggle("active",b.dataset.id===id));const d=conceptMap[id];infoEn.textContent=d.en;infoZh.textContent=d.zh;infoDefinition.textContent=d.def;infoBody.textContent=d.body;infoEquation.textContent=d.eq;infoBullets.innerHTML=d.bullets.map(x=>"<li>"+x+"</li>").join("");
+ if(id==="blade"){fullMesh.material.color.set(0x62d4ff);fullMesh.material.emissive.set(0x62d4ff);fullMesh.material.emissiveIntensity=.07}
+ else if(id==="leading")showEdge(rotationDir===1?H.leadCCW:H.trailCCW,0x62d4ff);
+ else if(id==="trailing")showEdge(rotationDir===1?H.trailCCW:H.leadCCW,0xff7b86);
+ else if(id==="surfaces")show([H.upper,H.lower]);
+ else if(id==="pitch")show(H.helix);
+ else show(H[id]);
+ infoAction.textContent=id==="airfoil"?"截面由切平面与 XOAR9x7 网格逐三角求交得到。":id==="leading"||id==="trailing"?"边缘曲线从 STL 外轮廓按径向采样，并随 CCW/CW 旋向互换。":id==="sweep"?"蓝线是 STL 前后缘中点的真实趋势；黄线是纯径向参考。":id==="duct"?"涵道不在原 STL 中，这个透明环只是教学叠加。":"高亮和辅助线都以 XOAR9x7 的真实位置与尺度为基础。";
+ status.innerHTML="<strong>"+d.en+" · "+d.zh+"：</strong>"+d.def;
+ if(assist){if(id==="sweep"||id==="plane")setCamera(new THREE.Vector3(0,0,9),new THREE.Vector3());if(id==="dihedral")setCamera(new THREE.Vector3(0,-8.6,.7),new THREE.Vector3());if(["airfoil","chord","twist"].includes(id))setCamera(new THREE.Vector3(5.2,-6.4,4),new THREE.Vector3(.4,0,0))}
+}
+function setCamera(p,t){camera.position.copy(p);controls.target.copy(t);controls.update()}
+document.getElementById("resetView").onclick=()=>setCamera(new THREE.Vector3(5.2,-6.4,4.2),new THREE.Vector3());
+document.getElementById("topView").onclick=()=>setCamera(new THREE.Vector3(0,0,9),new THREE.Vector3());
+document.getElementById("sideView").onclick=()=>setCamera(new THREE.Vector3(0,-8.7,.6),new THREE.Vector3());
+document.getElementById("autoRotate").onclick=e=>{auto=!auto;controls.autoRotate=auto;e.currentTarget.classList.toggle("on",auto)};
+dirBtn.onclick=()=>{rotationDir*=-1;dirBtn.textContent="旋向 "+(rotationDir===1?"CCW":"CW");if(activeConcept==="leading"||activeConcept==="trailing")selectConcept(activeConcept,false)};
+document.getElementById("explode").onclick=e=>{if(!fullMesh)return;exploded=!exploded;e.currentTarget.classList.toggle("on",exploded);fullMesh.visible=!exploded;overlayGroup.visible=!exploded;helperGroup.visible=!exploded;for(const x of explodeGroup.children)x.visible=exploded;status.innerHTML=exploded?"<strong>教学爆炸：</strong>原 STL 是一个封闭整体，这里按几何位置人为分成两片桨叶和中心区域，只用于理解部件关系。":"<strong>普通视图：</strong>已恢复完整 XOAR9x7 网格。"};
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+function setMouse(ev){const r=renderer.domElement.getBoundingClientRect();mouse.x=(ev.clientX-r.left)/r.width*2-1;mouse.y=-(ev.clientY-r.top)/r.height*2+1;ray.setFromCamera(mouse,camera)}
+function conceptFromHit(h){if(h.object===fullMesh&&h.point){const rr=Math.hypot(h.point.x,h.point.y);if(rr<hubR)return"hub";if(rr<rootEnd)return"root";if(rr>tipStart)return"tip";return"blade"}return h.object.userData.concept||null}
+renderer.domElement.addEventListener("pointermove",ev=>{if(!fullMesh||exploded)return;setMouse(ev);const hs=ray.intersectObjects(pickables,true).filter(h=>h.object.visible),id=hs.length?conceptFromHit(hs[0]):null;if(id&&conceptMap[id]){tooltip.style.display="block";tooltip.style.left=ev.clientX+"px";tooltip.style.top=ev.clientY+"px";tooltip.textContent=conceptMap[id].en+" · "+conceptMap[id].zh;renderer.domElement.style.cursor="pointer"}else{tooltip.style.display="none";renderer.domElement.style.cursor="grab"}});
+renderer.domElement.addEventListener("pointerleave",()=>tooltip.style.display="none");
+renderer.domElement.addEventListener("click",ev=>{if(!fullMesh||exploded)return;setMouse(ev);const hs=ray.intersectObjects(pickables,true).filter(h=>h.object.visible);if(hs.length){const id=conceptFromHit(hs[0]);if(id&&conceptMap[id])selectConcept(id,false)}});
+function animateExplosion(){for(const x of explodeGroup.children){const t=exploded?x.userData.target:new THREE.Vector3();x.position.lerp(t,.09)}}
+function resize(){const w=holder.clientWidth,h=holder.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(holder);addEventListener("resize",resize);resize();
+function tick(){requestAnimationFrame(tick);animateExplosion();controls.update();renderer.render(scene,camera)}tick();
+loadMesh().catch(err=>{console.error(err);status.innerHTML="<strong>模型加载失败：</strong>"+err.message});
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.075;
-    controls.target.set(0,0,0);
-    controls.minDistance = 4.2;
-    controls.maxDistance = 18;
-    controls.autoRotateSpeed = 0.9;
-    controls.update();
-
-    scene.add(new THREE.HemisphereLight(0xbfe7ff, 0x132235, 1.2));
-    const key = new THREE.DirectionalLight(0xffffff, 2.4);
-    key.position.set(4,-4,7); scene.add(key);
-    const fill = new THREE.DirectionalLight(0x70d6ff, 1.2);
-    fill.position.set(-5,4,2); scene.add(fill);
-
-    const grid = new THREE.GridHelper(13, 26, 0x20415d, 0x173148);
-    grid.rotation.x = Math.PI/2;
-    grid.position.z = -1.3;
-    grid.material.transparent = true;
-    grid.material.opacity = .30;
-    scene.add(grid);
-
-    const rotor = new THREE.Group();
-    scene.add(rotor);
-
-    const R = 3.35;
-    const ROOT = 0.58;
-    const bladeGroups = [];
-    const pickables = [];
-    const highlightHelpers = {};
-    const baseBladeColor = new THREE.Color(0xa9bfd0);
-    const accent = new THREE.Color(0x70d6ff);
-    const accent2 = new THREE.Color(0xffc857);
-
-    function chordAt(t) {
-      return 0.90 * (1 - 0.64*t) + 0.18*Math.sin(Math.PI*t);
-    }
-    function twistAt(t) {
-      return THREE.MathUtils.degToRad(29 - 19*t);
-    }
-    function sweepAt(t) {
-      const q = Math.max(0, (t - .58) / .42);
-      return -0.58 * Math.pow(q, 1.45);
-    }
-    function dihedralAt(t) {
-      const q = Math.max(0, (t - .70) / .30);
-      return 0.10*t*t + 0.26*q*q;
-    }
-    function thickAt(t) { return 0.12 - 0.025*t; }
-
-    function thicknessProfile(x) {
-      const xx = Math.max(0, Math.min(1, x));
-      return 5*(0.2969*Math.sqrt(xx) - 0.1260*xx - 0.3516*xx*xx + 0.2843*xx*xx*xx - 0.1036*xx*xx*xx*xx);
-    }
-
-    function pointAt(t, u, side) {
-      const r = ROOT + (R-ROOT)*t;
-      const c = chordAt(t);
-      const theta = twistAt(t);
-      const y0 = (0.25-u)*c;
-      const z0 = side * thickAt(t) * c * thicknessProfile(u);
-      const y = y0*Math.cos(theta) - z0*Math.sin(theta) + sweepAt(t);
-      const z = y0*Math.sin(theta) + z0*Math.cos(theta) + dihedralAt(t);
-      return new THREE.Vector3(r, y, z);
-    }
-
-    function meanPointAt(t,u) {
-      const a = pointAt(t,u,1);
-      const b = pointAt(t,u,-1);
-      return a.add(b).multiplyScalar(.5);
-    }
-
-    function makeSurface(side, conceptId) {
-      const ns = 34, nc = 28;
-      const pos = [], idx = [];
-      for (let i=0;i<=ns;i++) {
-        const t = i/ns;
-        for (let j=0;j<=nc;j++) {
-          const u = j/nc;
-          const p = pointAt(t,u,side);
-          pos.push(p.x,p.y,p.z);
-        }
-      }
-      for (let i=0;i<ns;i++) {
-        for (let j=0;j<nc;j++) {
-          const a = i*(nc+1)+j, b=a+1, c=(i+1)*(nc+1)+j, d=c+1;
-          if (side>0) idx.push(a,c,b,b,c,d);
-          else idx.push(a,b,c,b,d,c);
-        }
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
-      g.setIndex(idx); g.computeVertexNormals();
-      const m = new THREE.MeshStandardMaterial({
-        color: baseBladeColor,
-        metalness:.08,
-        roughness:.42,
-        side:THREE.DoubleSide,
-        transparent:true,
-        opacity:.97
-      });
-      const mesh = new THREE.Mesh(g,m);
-      mesh.userData.concept = conceptId;
-      mesh.userData.surfaceSide = side > 0 ? "upper" : "lower";
-      pickables.push(mesh);
-      return mesh;
-    }
-
-    function tubeFromPoints(points, color, radius=.026, opacity=1) {
-      const curve = new THREE.CatmullRomCurve3(points);
-      const g = new THREE.TubeGeometry(curve, Math.max(16, points.length*3), radius, 8, false);
-      const m = new THREE.MeshStandardMaterial({color, emissive:color, emissiveIntensity:.22, roughness:.35, transparent:opacity<1, opacity});
-      return new THREE.Mesh(g,m);
-    }
-
-    function loopTube(points, color, radius=.021) {
-      const curve = new THREE.CatmullRomCurve3(points, true);
-      const g = new THREE.TubeGeometry(curve, Math.max(24, points.length*3), radius, 8, true);
-      const m = new THREE.MeshStandardMaterial({color, emissive:color, emissiveIntensity:.18, roughness:.4});
-      return new THREE.Mesh(g,m);
-    }
-
-    function buildBlade(angle) {
-      const g = new THREE.Group();
-      g.rotation.z = angle;
-      g.userData.angle = angle;
-
-      const upper = makeSurface(1,"blade");
-      const lower = makeSurface(-1,"blade");
-      g.add(upper,lower);
-      g.userData.upper = upper;
-      g.userData.lower = lower;
-
-      const lePts=[], tePts=[], stackPts=[];
-      for (let i=0;i<=36;i++) {
-        const t=i/36;
-        lePts.push(meanPointAt(t,0));
-        tePts.push(meanPointAt(t,1));
-        stackPts.push(meanPointAt(t,.25));
-      }
-      const le = tubeFromPoints(lePts, 0x70d6ff, .033);
-      const te = tubeFromPoints(tePts, 0xff7d8a, .028);
-      le.visible=false; te.visible=false;
-      le.userData.concept="leading"; te.userData.concept="trailing";
-      pickables.push(le,te);
-      g.add(le,te);
-
-      const rootPts=[], tipPts=[];
-      for (let j=0;j<=34;j++) {
-        const u=j/34;
-        rootPts.push(pointAt(0,u,1));
-      }
-      for (let j=34;j>=0;j--) rootPts.push(pointAt(0,j/34,-1));
-      for (let j=0;j<=34;j++) tipPts.push(pointAt(1,j/34,1));
-      for (let j=34;j>=0;j--) tipPts.push(pointAt(1,j/34,-1));
-      const rootLoop=loopTube(rootPts,0x8be28b,.026);
-      const tipLoop=loopTube(tipPts,0xffc857,.03);
-      rootLoop.visible=false; tipLoop.visible=false;
-      rootLoop.userData.concept="root"; tipLoop.userData.concept="tip";
-      pickables.push(rootLoop,tipLoop);
-      g.add(rootLoop,tipLoop);
-
-      const chordT=.63;
-      const chord = tubeFromPoints([meanPointAt(chordT,0), meanPointAt(chordT,1)],0xffc857,.026);
-      chord.visible=false; chord.userData.concept="chord"; pickables.push(chord); g.add(chord);
-
-      const foilPts=[];
-      for(let j=0;j<=40;j++) foilPts.push(pointAt(chordT,j/40,1));
-      for(let j=40;j>=0;j--) foilPts.push(pointAt(chordT,j/40,-1));
-      const foil=loopTube(foilPts,0xffc857,.019);
-      foil.visible=false; foil.userData.concept="airfoil"; pickables.push(foil); g.add(foil);
-
-      const stack = tubeFromPoints(stackPts,0x70d6ff,.022,.9);
-      stack.visible=false; stack.userData.concept="sweep"; pickables.push(stack); g.add(stack);
-
-      const radial = tubeFromPoints([new THREE.Vector3(ROOT,0,0),new THREE.Vector3(R,0,0)],0xffc857,.017,.8);
-      radial.visible=false; radial.userData.concept="sweep"; pickables.push(radial); g.add(radial);
-
-      const dihedralRef = tubeFromPoints([new THREE.Vector3(ROOT,0,0),new THREE.Vector3(R,0,0)],0xffc857,.017,.75);
-      dihedralRef.visible=false; dihedralRef.userData.concept="dihedral"; pickables.push(dihedralRef); g.add(dihedralRef);
-      const dihedralCurve = tubeFromPoints(stackPts,0x70d6ff,.025,.95);
-      dihedralCurve.visible=false; dihedralCurve.userData.concept="dihedral"; pickables.push(dihedralCurve); g.add(dihedralCurve);
-
-      const twistGroup = new THREE.Group();
-      [0.18,.48,.78,.98].forEach(t => {
-        const pts=[];
-        for(let j=0;j<=28;j++) pts.push(pointAt(t,j/28,1));
-        for(let j=28;j>=0;j--) pts.push(pointAt(t,j/28,-1));
-        const lp=loopTube(pts,0xffc857,.015);
-        twistGroup.add(lp);
-      });
-      twistGroup.visible=false;
-      twistGroup.userData.concept="twist";
-      g.add(twistGroup);
-
-      const explodedSlices = new THREE.Group();
-      [0.12,.28,.44,.60,.76,.90].forEach((t,k) => {
-        const pts=[];
-        for(let j=0;j<=26;j++) pts.push(pointAt(t,j/26,1));
-        for(let j=26;j>=0;j--) pts.push(pointAt(t,j/26,-1));
-        const lp=loopTube(pts, k%2 ? 0x70d6ff : 0xffc857,.012);
-        lp.material.transparent=true;
-        lp.material.opacity=.62;
-        explodedSlices.add(lp);
-      });
-      explodedSlices.visible=false;
-      g.add(explodedSlices);
-      g.userData.explodedSlices=explodedSlices;
-
-      g.userData.helpers={le,te,rootLoop,tipLoop,chord,foil,stack,radial,dihedralRef,dihedralCurve,twistGroup};
-      bladeGroups.push(g);
-      rotor.add(g);
-      return g;
-    }
-
-    buildBlade(0);
-    buildBlade(Math.PI);
-
-    const hubGroup = new THREE.Group();
-    rotor.add(hubGroup);
-    const hubMat = new THREE.MeshStandardMaterial({color:0x536d82,metalness:.35,roughness:.34});
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(.56,.62,.42,64),hubMat);
-    hub.rotation.x=Math.PI/2;
-    hub.userData.concept="hub"; pickables.push(hub); hubGroup.add(hub);
-    const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(.34,.48,.26,64),new THREE.MeshStandardMaterial({color:0x8197a8,metalness:.22,roughness:.38}));
-    hubCap.rotation.x=Math.PI/2; hubCap.position.z=.30;
-    hubCap.userData.concept="hub"; pickables.push(hubCap); hubGroup.add(hubCap);
-
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,1.2,32),new THREE.MeshStandardMaterial({color:0x33485a,metalness:.65,roughness:.24}));
-    shaft.rotation.x=Math.PI/2;
-    shaft.position.z=-.35;
-    hubGroup.add(shaft);
-
-    const plane = new THREE.Mesh(
-      new THREE.CircleGeometry(R+0.35,96),
-      new THREE.MeshBasicMaterial({color:0x70d6ff,transparent:true,opacity:.075,side:THREE.DoubleSide,depthWrite:false})
-    );
-    plane.visible=false;
-    plane.userData.concept="plane"; pickables.push(plane);
-    rotor.add(plane);
-
-    const planeRing = new THREE.Mesh(
-      new THREE.RingGeometry(R+.25,R+.30,128),
-      new THREE.MeshBasicMaterial({color:0x70d6ff,transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false})
-    );
-    planeRing.visible=false; rotor.add(planeRing);
-
-    const duct = new THREE.Group();
-    const ductWall = new THREE.Mesh(
-      new THREE.CylinderGeometry(R+.48,R+.48,.66,128,1,true),
-      new THREE.MeshStandardMaterial({color:0x70d6ff,transparent:true,opacity:.17,roughness:.35,metalness:.08,side:THREE.DoubleSide,depthWrite:false})
-    );
-    ductWall.rotation.x=Math.PI/2;
-    duct.add(ductWall);
-    const ductA = new THREE.Mesh(new THREE.TorusGeometry(R+.48,.12,16,128),new THREE.MeshStandardMaterial({color:0x70d6ff,transparent:true,opacity:.62,roughness:.35}));
-    ductA.position.z=.33;
-    const ductB = ductA.clone(); ductB.position.z=-.33;
-    duct.add(ductA,ductB);
-    [ductWall, ductA, ductB].forEach(m => { m.userData.concept="duct"; pickables.push(m); });
-    duct.visible=false;
-    duct.userData.concept="duct";
-    rotor.add(duct);
-
-    const helixPts=[];
-    const turns=1.08, pitch=2.05, hR=R+.72;
-    for(let i=0;i<=150;i++) {
-      const q=i/150;
-      const a=q*Math.PI*2*turns;
-      helixPts.push(new THREE.Vector3(hR*Math.cos(a),hR*Math.sin(a),-pitch/2+pitch*q));
-    }
-    const helix=tubeFromPoints(helixPts,0xffc857,.025,.9);
-    helix.visible=false; helix.userData.concept="pitch"; pickables.push(helix); scene.add(helix);
-
-    highlightHelpers.plane=[plane,planeRing];
-    highlightHelpers.duct=[duct];
-    highlightHelpers.pitch=[helix];
-
-    function allBladeHelpers(name) {
-      return bladeGroups.map(b => b.userData.helpers[name]).filter(Boolean);
-    }
-
-    function resetAppearance() {
-      bladeGroups.forEach(b => {
-        [b.userData.upper,b.userData.lower].forEach(m => {
-          m.material.color.copy(baseBladeColor);
-          m.material.emissive.set(0x000000);
-          m.material.emissiveIntensity=0;
-          m.material.opacity=.97;
-        });
-        Object.values(b.userData.helpers).forEach(h => h.visible=false);
-      });
-      plane.visible=false; planeRing.visible=false; duct.visible=false; helix.visible=false;
-      hubMat.color.set(0x536d82);
-      hubMat.emissive.set(0x000000);
-      hubMat.emissiveIntensity=0;
-      hubCap.material.color.set(0x8197a8);
-      hubCap.material.emissive.set(0x000000);
-      hubCap.material.emissiveIntensity=0;
-    }
-
-    let activeConcept="leading";
-    function selectConcept(id, cameraAssist=false) {
-      if(!conceptMap[id]) return;
-      activeConcept=id;
-      resetAppearance();
-
-      document.querySelectorAll(".concept-btn").forEach(b => b.classList.toggle("active", b.dataset.id===id));
-      const c=conceptMap[id];
-      infoEn.textContent=c.en;
-      infoZh.textContent=c.zh;
-      infoDefinition.textContent=c.def;
-      infoBody.textContent=c.body;
-      infoEquation.textContent=c.eq;
-      infoBullets.innerHTML="";
-      c.bullets.forEach(v=>{ const li=document.createElement("li"); li.textContent=v; infoBullets.appendChild(li); });
-
-      const helperNames={
-        leading:"le", trailing:"te", root:"rootLoop", tip:"tipLoop", chord:"chord",
-        airfoil:"foil", twist:"twistGroup"
-      };
-      if(helperNames[id]) allBladeHelpers(helperNames[id]).forEach(h=>h.visible=true);
-
-      if(id==="sweep") {
-        allBladeHelpers("stack").forEach(h=>h.visible=true);
-        allBladeHelpers("radial").forEach(h=>h.visible=true);
-      }
-      if(id==="dihedral") {
-        allBladeHelpers("dihedralRef").forEach(h=>h.visible=true);
-        allBladeHelpers("dihedralCurve").forEach(h=>h.visible=true);
-        plane.visible=true; planeRing.visible=true;
-      }
-      if(id==="plane") { plane.visible=true; planeRing.visible=true; }
-      if(id==="duct") duct.visible=true;
-      if(id==="pitch") helix.visible=true;
-
-      if(id==="blade") {
-        bladeGroups.forEach(b=>[b.userData.upper,b.userData.lower].forEach(m=>{
-          m.material.color.copy(accent); m.material.emissive.copy(accent); m.material.emissiveIntensity=.08;
-        }));
-      }
-      if(id==="hub") {
-        hubMat.color.copy(accent2); hubMat.emissive.copy(accent2); hubMat.emissiveIntensity=.12;
-        hubCap.material.color.copy(accent2); hubCap.material.emissive.copy(accent2); hubCap.material.emissiveIntensity=.12;
-      }
-      if(id==="surfaces") {
-        bladeGroups.forEach(b=>{
-          b.userData.upper.material.color.set(0x70d6ff);
-          b.userData.upper.material.emissive.set(0x70d6ff);
-          b.userData.upper.material.emissiveIntensity=.05;
-          b.userData.lower.material.color.set(0xffc857);
-          b.userData.lower.material.emissive.set(0xffc857);
-          b.userData.lower.material.emissiveIntensity=.05;
-        });
-      }
-
-      status.innerHTML="<strong>" + c.en + " · " + c.zh + "：</strong>" + c.def;
-      infoAction.textContent = id==="sweep" ? "点“俯视”，比较黄色直径参考线和蓝色弯曲积叠线。" :
-                               id==="dihedral" ? "点“侧视”，看桨叶外段如何离开旋转平面。" :
-                               id==="twist" ? "开启“教学爆炸图”，多个翼型截面的角度差会更容易观察。" :
-                               id==="duct" ? "旋转视角，确认涵道是包在整副桨外面的独立环形结构。" :
-                               "拖动模型，从不同角度确认高亮部分到底是“线、面、截面还是整件”。";
-
-      if(cameraAssist) {
-        if(id==="sweep" || id==="plane") setCamera(new THREE.Vector3(0,0,9.6), new THREE.Vector3(0,0,0));
-        if(id==="dihedral") setCamera(new THREE.Vector3(0,-9.2,1.4), new THREE.Vector3(0,0,.15));
-        if(id==="airfoil" || id==="chord" || id==="twist") setCamera(new THREE.Vector3(5.8,-7.8,4.8), new THREE.Vector3(.5,0,.1));
-      }
-    }
-
-    function setCamera(pos,target) {
-      camera.position.copy(pos);
-      controls.target.copy(target);
-      controls.update();
-    }
-
-    let exploded=false;
-    document.getElementById("explode").addEventListener("click", e => {
-      exploded=!exploded;
-      e.currentTarget.classList.toggle("on",exploded);
-      bladeGroups.forEach(b=>b.userData.explodedSlices.visible=exploded);
-      status.innerHTML = exploded
-        ? "<strong>教学爆炸图：</strong>桨毂与两片桨叶被教学性分开，同时显示多组翼型截面。它用于理解几何，不代表真实制造装配关系。"
-        : "<strong>普通视图：</strong>已恢复完整螺旋桨。";
-    });
-
-    let auto=false;
-    document.getElementById("autoRotate").addEventListener("click", e=>{
-      auto=!auto; controls.autoRotate=auto; e.currentTarget.classList.toggle("on",auto);
-    });
-    document.getElementById("resetView").addEventListener("click",()=>setCamera(new THREE.Vector3(5.8,-7.8,5.4),new THREE.Vector3(0,0,0)));
-    document.getElementById("topView").addEventListener("click",()=>setCamera(new THREE.Vector3(0,0,9.8),new THREE.Vector3(0,0,0)));
-    document.getElementById("sideView").addEventListener("click",()=>setCamera(new THREE.Vector3(0,-9.4,1.0),new THREE.Vector3(0,0,.12)));
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    function setMouse(ev) {
-      const r=renderer.domElement.getBoundingClientRect();
-      mouse.x=((ev.clientX-r.left)/r.width)*2-1;
-      mouse.y=-((ev.clientY-r.top)/r.height)*2+1;
-      raycaster.setFromCamera(mouse,camera);
-    }
-    renderer.domElement.addEventListener("pointermove",ev=>{
-      setMouse(ev);
-      const hits=raycaster.intersectObjects(pickables,true).filter(h=>h.object.visible);
-      const hit=hits.find(h=>h.object.userData.concept || h.object.parent?.userData.concept);
-      if(hit) {
-        const id=hit.object.userData.concept || hit.object.parent.userData.concept;
-        const c=conceptMap[id];
-        if(c) {
-          tooltip.style.display="block";
-          tooltip.style.left=ev.clientX+"px"; tooltip.style.top=ev.clientY+"px";
-          tooltip.textContent=c.en+" · "+c.zh;
-          renderer.domElement.style.cursor="pointer";
-          return;
-        }
-      }
-      tooltip.style.display="none";
-      renderer.domElement.style.cursor="grab";
-    });
-    renderer.domElement.addEventListener("pointerleave",()=>{tooltip.style.display="none";});
-    renderer.domElement.addEventListener("click",ev=>{
-      setMouse(ev);
-      const hits=raycaster.intersectObjects(pickables,true).filter(h=>h.object.visible);
-      const hit=hits.find(h=>h.object.userData.concept || h.object.parent?.userData.concept);
-      if(hit) {
-        const id=hit.object.userData.concept || hit.object.parent.userData.concept;
-        if(conceptMap[id]) selectConcept(id,false);
-      }
-    });
-
-    function animateExplode() {
-      bladeGroups.forEach((b,i)=>{
-        const a=b.userData.angle;
-        const tx=exploded ? Math.cos(a)*.78 : 0;
-        const ty=exploded ? Math.sin(a)*.78 : 0;
-        const tz=exploded ? (i===0 ? .42 : -.42) : 0;
-        b.position.x += (tx-b.position.x)*.09;
-        b.position.y += (ty-b.position.y)*.09;
-        b.position.z += (tz-b.position.z)*.09;
-      });
-      const hz=exploded ? -1.0 : 0;
-      hubGroup.position.z += (hz-hubGroup.position.z)*.09;
-    }
-
-    function resize() {
-      const w=holder.clientWidth, h=holder.clientHeight;
-      if(!w||!h) return;
-      renderer.setSize(w,h,false);
-      camera.aspect=w/h;
-      camera.updateProjectionMatrix();
-    }
-    window.addEventListener("resize",resize);
-    new ResizeObserver(resize).observe(holder);
-    resize();
-
-    function tick() {
-      requestAnimationFrame(tick);
-      animateExplode();
-      controls.update();
-      renderer.render(scene,camera);
-    }
-    selectConcept("leading",false);
-    tick();
-  </script>
+</script>
 </body>
 </html>
