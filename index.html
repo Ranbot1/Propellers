@@ -640,6 +640,7 @@
     ductA.position.z=.33;
     const ductB = ductA.clone(); ductB.position.z=-.33;
     duct.add(ductA,ductB);
+    [ductWall, ductA, ductB].forEach(m => { m.userData.concept="duct"; pickables.push(m); });
     duct.visible=false;
     duct.userData.concept="duct";
     rotor.add(duct);
