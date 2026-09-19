@@ -1,196 +1,121 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XOAR 9×7 螺旋桨 · 3D 基础概念</title>
-<meta name="description" content="基于用户提供 XOAR9x7 STL 的三维交互式螺旋桨基础概念教程。">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#0a0d12" />
+<title>XOAR 9×7 螺旋桨 · 3D 交互基础教程</title>
+<meta name="description" content="基于 XOAR9x7 STL 实体几何的可点击三维螺旋桨基础概念教程。" />
 <style>
-:root{--bg:#07111f;--panel:rgba(8,20,35,.92);--panel2:rgba(18,36,58,.72);--line:rgba(170,210,240,.14);--txt:#ecf7ff;--muted:#9fb6c9;--a:#6ed8ff;--b:#ffc85a;--red:#ff7183;--green:#83e1a8}
-*{box-sizing:border-box}html,body{margin:0;background:#07111f;color:var(--txt);font-family:Inter,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
-body{min-height:100vh;background:radial-gradient(circle at 60% 10%,rgba(49,140,202,.14),transparent 32%),linear-gradient(#07111f,#081522)}
-header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);background:rgba(5,15,27,.82);backdrop-filter:blur(14px);position:relative;z-index:20}
-.brand{display:flex;align-items:center;gap:11px}.mark{width:38px;height:38px;border:1px solid rgba(110,216,255,.25);background:rgba(110,216,255,.08);border-radius:12px;display:grid;place-items:center}
-.kicker{font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:800;color:var(--a)}h1{font-size:20px;margin:2px 0 0}.headmeta{font-size:12px;color:var(--muted);text-align:right}
-.layout{display:grid;grid-template-columns:270px minmax(0,1fr) 340px;min-height:calc(100vh - 68px)}
-.side,.info{background:var(--panel);backdrop-filter:blur(14px);overflow:auto;position:relative;z-index:10}.side{border-right:1px solid var(--line);padding:15px 12px}.info{border-left:1px solid var(--line);padding:20px}
-.section{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:800;margin:7px 8px 10px}
-.btns{display:grid;gap:6px}.concept{border:1px solid transparent;background:transparent;color:var(--txt);border-radius:11px;padding:9px 10px;text-align:left;cursor:pointer}.concept:hover{background:rgba(110,216,255,.06)}.concept.active{border-color:rgba(110,216,255,.28);background:linear-gradient(90deg,rgba(110,216,255,.15),rgba(110,216,255,.035));box-shadow:inset 3px 0 var(--a)}
-.concept b{display:block;font-size:13px}.concept span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-.viewer{position:relative;min-height:680px;overflow:hidden;background:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:36px 36px}
-#three{position:absolute;inset:0}.toolbar{position:absolute;left:14px;top:14px;z-index:5;display:flex;gap:7px;flex-wrap:wrap}.tool{border:1px solid rgba(180,220,245,.18);background:rgba(6,18,32,.78);color:var(--txt);border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer;backdrop-filter:blur(10px)}.tool:hover{border-color:rgba(110,216,255,.45)}.tool.on{background:var(--a);color:#06111e;font-weight:800}
-.badge{position:absolute;left:14px;bottom:14px;z-index:5;max-width:580px;background:rgba(6,18,32,.82);border:1px solid rgba(180,220,245,.14);border-radius:12px;padding:9px 11px;color:var(--muted);font-size:12px;line-height:1.55;backdrop-filter:blur(10px)}.badge strong{color:var(--txt)}
-.loading{position:absolute;inset:0;display:grid;place-items:center;z-index:8;background:rgba(7,17,31,.92);transition:.3s}.loading.hide{opacity:0;pointer-events:none}.loader{text-align:center;color:var(--muted)}.spinner{width:44px;height:44px;border:3px solid rgba(110,216,255,.15);border-top-color:var(--a);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 12px}@keyframes s{to{transform:rotate(360deg)}}
-.info .ey{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a)}.info h2{font-size:25px;margin:7px 0 3px}.cn{color:var(--b);font-weight:700;margin-bottom:14px}.def{background:rgba(110,216,255,.055);border:1px solid rgba(110,216,255,.17);border-radius:12px;padding:12px 13px;font-size:13px;line-height:1.65;margin-bottom:13px}.info p{color:#c3d6e5;font-size:13px;line-height:1.72}.eq{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);padding:10px 12px;border-radius:10px;font-size:12px;overflow:auto}
-ul{list-style:none;padding:0;margin:14px 0;display:grid;gap:8px}li{color:#b9ccdc;font-size:12px;line-height:1.55;padding-left:16px;position:relative}li:before{content:"•";position:absolute;left:2px;color:var(--b);font-size:16px}
-.card{margin-top:14px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.035);border-radius:12px;padding:11px 12px}.card strong{font-size:12px}.card p{margin:6px 0 0;font-size:11px;color:var(--muted)}a{color:var(--a);text-decoration:none}
-.stat{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}.stat div{background:rgba(255,255,255,.035);border-radius:9px;padding:8px}.stat b{font-size:12px;display:block}.stat span{font-size:10px;color:var(--muted)}
-.tooltip{position:fixed;z-index:100;display:none;pointer-events:none;background:rgba(4,13,24,.95);border:1px solid rgba(110,216,255,.25);border-radius:8px;padding:6px 8px;font-size:11px}
-@media(max-width:1050px){.layout{grid-template-columns:220px minmax(0,1fr)}.info{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}}
-@media(max-width:720px){header{height:auto;padding:12px}.headmeta{display:none}.layout{display:block}.side{border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}.btns{display:flex;min-width:max-content}.concept{width:142px}.viewer{min-height:68vh}.info{padding:17px}}
+:root{--bg:#0a0d12;--panel:#10151cdd;--panel2:#151c25cc;--line:#ffffff16;--text:#f1f4f7;--muted:#9aa7b3;--cyan:#62d8ff;--amber:#ffca63;--red:#ff7b7b;--green:#83e6b5}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}body{overflow:hidden}
+.app{height:100vh;display:grid;grid-template-rows:64px minmax(0,1fr);background:radial-gradient(circle at 52% 12%,#192531 0,#0a0d12 45%)}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);background:#090d12dd;backdrop-filter:blur(16px);z-index:20}.brand{display:flex;gap:12px;align-items:center}.mark{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid #ffffff1a;background:#ffffff08;font-weight:900}.title{font-weight:780;letter-spacing:-.02em}.sub{font-size:11px;color:var(--muted);margin-top:2px}.badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.badge{font-size:11px;padding:7px 9px;border:1px solid var(--line);border-radius:999px;background:#ffffff08;color:#cbd4dc}.badge.real{border-color:#62d8ff55;color:#aeeaff;background:#62d8ff12}
+.main{min-height:0;display:grid;grid-template-columns:230px minmax(0,1fr) 330px}.side,.info{min-height:0;overflow:auto;background:var(--panel);backdrop-filter:blur(14px);z-index:10}.side{border-right:1px solid var(--line);padding:14px 12px 22px}.info{border-left:1px solid var(--line);padding:20px}.section-label{font-size:10px;color:#788796;text-transform:uppercase;letter-spacing:.15em;font-weight:800;margin:5px 8px 11px}.concepts{display:grid;gap:5px}.concept{border:1px solid transparent;background:transparent;color:var(--text);border-radius:10px;text-align:left;padding:9px 10px;cursor:pointer;transition:.16s}.concept:hover{background:#ffffff08}.concept.active{border-color:#62d8ff42;background:linear-gradient(90deg,#62d8ff16,#62d8ff05);box-shadow:inset 3px 0 var(--cyan)}.concept b{font-size:12px;display:block}.concept span{font-size:11px;color:var(--muted)}
+.viewer{position:relative;overflow:hidden;min-width:0;background:radial-gradient(circle at 50% 42%,#24313d66 0,#0e131a44 42%,transparent 72%)}#scene{position:absolute;inset:0}canvas{display:block;width:100%;height:100%;outline:0}.toolbar{position:absolute;top:14px;left:14px;z-index:5;display:flex;gap:7px;flex-wrap:wrap}.tool{border:1px solid #ffffff1b;background:#0a1018c9;color:#dfe7ee;border-radius:9px;padding:8px 10px;font-size:11px;cursor:pointer;backdrop-filter:blur(12px)}.tool:hover{border-color:#62d8ff55}.tool.on{background:var(--cyan);border-color:var(--cyan);color:#071017;font-weight:800}.model-tag{position:absolute;right:14px;top:14px;z-index:5;text-align:right}.model-tag strong{display:block;font-size:13px}.model-tag span{font-size:10px;color:var(--muted)}.hint{position:absolute;left:14px;bottom:76px;z-index:5;max-width:480px;border:1px solid var(--line);background:#080d14cc;backdrop-filter:blur(12px);padding:10px 12px;border-radius:11px;font-size:11px;color:#aebbc6;line-height:1.55}.hint strong{color:white}.section-control{position:absolute;left:14px;right:14px;bottom:14px;z-index:5;border:1px solid var(--line);background:#080d14d9;backdrop-filter:blur(14px);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:130px 1fr auto;gap:12px;align-items:center}.section-control label{font-size:11px;color:#c8d1d9}.section-control input{width:100%;accent-color:#62d8ff}.readout{font-size:11px;color:#aebbc6;white-space:nowrap}.readout b{color:#fff}.tooltip{position:fixed;display:none;pointer-events:none;z-index:100;background:#060a10ee;border:1px solid #62d8ff55;border-radius:8px;padding:6px 8px;font-size:11px;box-shadow:0 12px 40px #0008}
+.info .eyebrow{font-size:10px;color:var(--cyan);font-weight:800;letter-spacing:.15em;text-transform:uppercase}.info h2{font-size:26px;line-height:1.05;margin:7px 0 3px}.info .zh{font-size:14px;color:var(--amber);font-weight:700;margin-bottom:16px}.definition{padding:13px 14px;border:1px solid #62d8ff22;border-radius:12px;background:#62d8ff09;color:#e6f7ff;font-size:12px;line-height:1.65;margin-bottom:14px}.info p{font-size:12px;line-height:1.75;color:#bec9d2;margin:0 0 13px}.formula{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;padding:11px 12px;border-radius:10px;background:#ffffff08;border:1px solid #ffffff0d;font-size:11px;color:#e7edf2;margin:12px 0}.bullets{padding:0;margin:12px 0;list-style:none;display:grid;gap:8px}.bullets li{padding-left:15px;position:relative;font-size:11px;line-height:1.55;color:#acbac5}.bullets li:before{content:"•";position:absolute;left:2px;color:var(--amber)}.data-card{margin-top:16px;padding:12px;border-radius:11px;border:1px solid var(--line);background:#ffffff06}.data-card .row{display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:5px 0;border-bottom:1px solid #ffffff0a}.data-card .row:last-child{border-bottom:0}.data-card span{color:var(--muted)}.data-card b{font-weight:700}.note{font-size:10px!important;color:#7f8d99!important;margin-top:9px!important}.loading{position:absolute;inset:0;display:grid;place-items:center;background:#0a0d12;z-index:30;transition:.4s}.loading.hide{opacity:0;pointer-events:none}.loader{text-align:center;color:#b6c3cd}.spinner{width:32px;height:32px;border-radius:50%;border:2px solid #ffffff18;border-top-color:var(--cyan);animation:spin .8s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:1050px){.main{grid-template-columns:200px minmax(0,1fr)}.info{display:none}}@media(max-width:720px){body{overflow:auto}.app{height:auto;min-height:100vh}.badges{display:none}.main{display:block}.side{border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}.concepts{display:flex;min-width:max-content}.concept{width:130px}.viewer{height:72vh}.info{display:block;border-left:0;border-top:1px solid var(--line)}.section-control{grid-template-columns:1fr;gap:7px}.readout{white-space:normal}.hint{bottom:128px}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
-<header>
-  <div class="brand"><div class="mark">✦</div><div><div class="kicker">Real STL · Propeller Anatomy</div><h1>XOAR 9×7 螺旋桨 · 三维基础概念</h1></div></div>
-  <div class="headmeta">模型来源：你上传的 XOAR9x7.stl<br>网页显示版由原 STL 直接网格优化，不再使用程序生成假桨</div>
-</header>
-<main class="layout">
-<aside class="side">
-  <div class="section">点击术语 → 模型高亮</div>
-  <div class="btns" id="concepts"></div>
-</aside>
-<section class="viewer" id="viewer">
-  <div id="three"></div>
-  <div class="loading" id="loading"><div class="loader"><div class="spinner"></div><b>正在加载 XOAR 真实 STL 几何</b><br><span>解压网格并计算教学辅助几何…</span></div></div>
-  <div class="toolbar">
-    <button class="tool" id="home">默认视角</button>
-    <button class="tool" id="top">俯视</button>
-    <button class="tool" id="side">侧视</button>
-    <button class="tool" id="explode">爆炸图</button>
-    <button class="tool" id="wire">线框</button>
-    <button class="tool" id="spin">自动旋转</button>
-  </div>
-  <div class="badge" id="badge"><strong>真实模型：</strong>225 × 49.1 × 12.6 mm。点击“Leading edge 前缘”开始。</div>
+<div class="app">
+<header><div class="brand"><div class="mark">3D</div><div><div class="title">XOAR 9×7 螺旋桨 · 实体概念教程</div><div class="sub">从真实 STL 截面理解 chord / twist / sweep / duct 等术语</div></div></div><div class="badges"><span class="badge real">STL-derived geometry</span><span class="badge">Ø ≈ 225 mm</span><span class="badge">2 blades</span></div></header>
+<div class="main">
+<aside class="side"><div class="section-label">点击术语</div><div class="concepts" id="concepts"></div></aside>
+<section class="viewer" id="viewer"><div id="scene"></div>
+<div class="toolbar"><button class="tool" id="reset">等轴测</button><button class="tool" id="top">俯视</button><button class="tool" id="side">侧视</button><button class="tool" id="explode">截面爆炸图</button><button class="tool" id="wire">网格</button><button class="tool" id="rotate">自动旋转</button></div>
+<div class="model-tag"><strong>XOAR 9×7</strong><span>上传 STL → 真实截面轻量化重建</span></div>
+<div class="hint" id="hint"><strong>开始：</strong>点左侧 <b>Leading edge 前缘</b>，蓝色曲线就是这副真实桨的前缘。</div>
+<div class="section-control"><label>剖面位置 <b id="rrLabel">r/R = 0.70</b></label><input id="rr" type="range" min="0.18" max="0.96" step="0.01" value="0.70"><div class="readout">c ≈ <b id="cVal">—</b> mm · twist ≈ <b id="tVal">—</b>°</div></div>
+<div class="loading" id="loading"><div class="loader"><div class="spinner"></div>正在构建 XOAR 真实截面模型…</div></div>
 </section>
-<aside class="info">
-  <div class="ey">Selected concept</div>
-  <h2 id="en">Leading edge</h2><div class="cn" id="zh">前缘</div>
-  <div class="def" id="def"></div><p id="body"></p><div class="eq" id="eq"></div><ul id="bullets"></ul>
-  <div class="card"><strong>真实模型说明</strong><p>源文件约 58,102 个三角面。网页默认载入由该 STL 直接生成的 3,397 面轻量版本，并使用平滑法线显示；轮廓、扭转、桨距形态、根部和桨尖均来自你的模型，而不是重新造型。</p><div class="stat"><div><b>225 mm</b><span>直径约</span></div><div><b>49.1 mm</b><span>最大弦向宽度</span></div><div><b>12.6 mm</b><span>轴向厚度范围</span></div><div><b>XOAR 9×7</b><span>上传模型</span></div></div></div>
-  <div class="card"><strong>旋向约定</strong><p>前缘/后缘按“从 +Z 方向看为逆时针旋转（CCW）”进行教学标注。若实际安装旋向相反，前缘与后缘身份会交换。</p></div>
-</aside>
-</main>
-<div class="tooltip" id="tip"></div>
-
+<aside class="info"><div class="eyebrow">Selected concept</div><h2 id="en">Leading edge</h2><div class="zh" id="zh">前缘</div><div class="definition" id="def"></div><p id="body"></p><div class="formula" id="formula"></div><ul class="bullets" id="bullets"></ul><div class="data-card"><div class="row"><span>当前剖面</span><b id="rrInfo">0.70 R</b></div><div class="row"><span>弦长 chord</span><b id="cInfo">—</b></div><div class="row"><span>扭转 twist</span><b id="tInfo">—</b></div><div class="row"><span>名义尺寸</span><b>9 × 7 in</b></div><p class="note">弦长/扭转来自你提供的 blade_definition.csv；模型表面来自你上传的 XOAR9x7.stl 截面。CSV 中 “02625” 在交互插值时按明显的格式含义 0.2625 解释。</p></div></aside>
+</div></div><div class="tooltip" id="tooltip"></div>
 <script type="module">
-import * as THREE from "three";
-import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 
-const data=[
-{id:"blade",en:"Blade",zh:"桨叶",def:"从桨毂向外延伸、与空气交换动量并产生推力的旋转翼面。",body:"真实螺旋桨不是平板。它可以理解为许多不同半径位置的翼型截面，按照各自弦长、扭转角和空间位置连续连接形成。",eq:"3D blade ≈ loft{ airfoil(r), c(r), θ(r) }",bul:["你看到的是从你上传 STL 直接得到的 XOAR 桨叶。","两侧桨叶通过中心桨毂连接。","后面的弦、扭转、前缘、后缘都属于桨叶几何。"]},
-{id:"hub",en:"Hub",zh:"桨毂",def:"位于旋转中心、与电机轴连接并向桨叶传递扭矩的中心实体。",body:"桨毂主要承担连接与传力任务。它和桨根相邻，但两者不是同一个概念。",eq:"motor torque → hub → blade",bul:["爆炸图会把桨毂和左右两片桨叶教学性分开。","桨毂附近半径小，因此圆周速度低。"]},
-{id:"root",en:"Root",zh:"桨根",def:"桨叶紧邻桨毂的内侧区域，是气动叶片向中心结构过渡的位置。",body:"桨根通常较厚、受弯矩较大，几何会兼顾结构强度；因为半径较小，它的局部圆周速度低于外段。",eq:"V_t = ωr",bul:["r 越小，圆周速度越低。","桨根 ≠ 桨毂：前者仍属于叶片。"]},
-{id:"tip",en:"Tip",zh:"桨尖",def:"桨叶最外端、半径接近 R 的区域。",body:"桨尖局部速度最高，也是桨尖涡和高频噪声研究的关键位置。很多低噪设计都会针对这里做收窄、后掠或三维弯曲。",eq:"V_tip ≈ ωR",bul:["桨尖两侧压力会发生绕流，形成 tip vortex。","大疆近年的低噪专利重点之一就是桨尖卸载。"]},
-{id:"leading",en:"Leading edge",zh:"前缘",def:"在给定旋转方向下，翼型截面最先迎接相对来流的那条空间边。",body:"这里按从 +Z 方向看逆时针旋转来标注。对右侧桨叶，运动方向大致朝 +Y，所以 +Y 一侧外轮廓被标为前缘；左侧桨叶相反。",eq:"relative flow → leading edge → airfoil → trailing edge",bul:["蓝色曲线来自真实 XOAR 网格外轮廓采样。","旋向相反时，前缘与后缘身份交换。"]},
-{id:"trailing",en:"Trailing edge",zh:"后缘",def:"气流经过翼型后离开桨叶的细边。",body:"后缘湍流散射是宽带噪声的重要来源之一。这里用红色空间曲线在真实桨叶上标出。",eq:"turbulent boundary layer + trailing edge → broadband noise",bul:["后缘不要和后掠 sweep 混淆。","后缘通常比前缘尖薄。"]},
-{id:"chord",en:"Chord / chord length",zh:"弦 / 弦长 c",def:"某一半径截面上，从前缘到后缘连接的参考直线；长度就是弦长。",body:"弦不是实体零件，而是一条几何参考线。黄色线取自这副 XOAR 桨大约 70% 半径处的真实截面。",eq:"c(r) = |LE(r) − TE(r)|",bul:["不同 r/R 位置的弦长可以不同。","CAD 重建时常把 c(r) 作为最核心输入之一。"]},
-{id:"airfoil",en:"Airfoil section",zh:"翼型截面",def:"在某个半径位置，用一个近似垂直于展向的平面切开桨叶得到的截面。",body:"黄色闭合线不是我画的假翼型，而是网页实时让平面与 XOAR 三角网格相交得到的截线。",eq:"section(r) = blade ∩ plane(r)",bul:["截面里可以看前缘、后缘、弦、厚度和弯度。","三维桨叶可视作许多这样的截面连续放样。"]},
-{id:"twist",en:"Twist",zh:"扭转",def:"不同半径位置的翼型截面具有不同几何安装角。",body:"网页同时切出四个真实截面，你会看到截面角度从内段到外段发生变化。这就是肉眼能看到的“桨叶被拧过”。",eq:"θ = θ(r)；常见趋势：θ_root > θ_tip",bul:["原因之一是 V_t=ωr，外段线速度更高。","扭转 twist 与名义桨距 pitch 有联系，但并不等价。"]},
-{id:"pitch",en:"Pitch",zh:"桨距",def:"把螺旋桨想成螺丝时，理论上旋转一整圈所对应的轴向前进距离。",body:"黄色螺旋线只用于解释几何意义。XOAR 9×7 名称中的“7”通常表示约 7 英寸名义桨距。实际前进距离会受滑移和工况影响。",eq:"P ≈ 2πr·tan(β)  （局部几何关系）",bul:["固定桨距桨仍然具有径向扭转。","桨距不是桨叶某一处的单一角度。"]},
-{id:"sweep",en:"Sweep",zh:"后掠 / 平面内偏移",def:"从旋转轴方向俯视时，桨叶参考线相对纯径向直线的平面内偏移。",body:"蓝色线是根据 XOAR 各径向截面中心估计出的真实积叠走势；黄色线是纯径向参考。两者差异就是平面内的 sweep/skew 直观概念。",eq:"sweep = in-plane offset from radial reference",bul:["俯视最容易理解。","它与扭转、弦长、上反/下反是不同设计变量。"]},
-{id:"dihedral",en:"Dihedral / Anhedral",zh:"上反 / 下反",def:"桨叶相对旋转平面沿轴向产生的平面外弯曲。",body:"侧视时看截面中心线是否离开 z=0 的理想旋转平面。如果外段向一侧翘起，就是上反/下反类三维几何。",eq:"out-of-plane offset = z(r) − z_plane",bul:["后掠发生在旋转平面内；上反/下反发生在平面外。","大疆最新低噪专利会组合这类三维桨尖几何。"]},
-{id:"plane",en:"Rotation plane",zh:"旋转平面",def:"与电机转轴垂直、用于描述旋翼旋转的基准平面。",body:"蓝色半透明圆盘就是 z=0 基准旋转平面。很多三维几何术语都要以它为参照。",eq:"rotor axis ⟂ rotation plane",bul:["sweep 在平面内看。","dihedral/anhedral 相对这个平面向外偏。"]},
-{id:"surfaces",en:"Pressure / suction surface",zh:"压力面 / 吸力面",def:"桨叶两侧主要表面；工作时两侧形成压力差并贡献气动力。",body:"这里依据网格三角形法向的轴向分量将两侧表面用蓝/黄区分。它是教学可视化，不代替具体工况 CFD 的压力场。",eq:"Δp across blade surface → aerodynamic force",bul:["真实压力面/吸力面定义与旋向、来流、安装角有关。","桨尖处两侧压力绕流形成 tip vortex。"]},
-{id:"duct",en:"Duct / shroud",zh:"涵道 / 外罩",def:"围绕螺旋桨外缘设置的环形气动结构，它不是桨叶自身的一部分。",body:"选择后网页会在 XOAR 开放桨周围加一个透明环，仅用于说明什么叫涵道。原始 XOAR STL 本身没有涵道。",eq:"open propeller + annular shroud → ducted fan",bul:["涵道会显著改变桨尖附近流场。","并不是所有工况下“有涵道就一定更安静”。"]}
+const HALF=[[-112.48,-18.86,-18.6,[0.64,0.64,0.65,0.65,0.65,0.66,0.66,0.66,0.67,0.67,0.67,0.68,0.68,0.68,0.68,0.69,0.69,0.69,0.7,0.7,0.7,0.7,0.7,0.73],[0.64,0.68,0.72,0.76,0.79,0.83,0.84,0.83,0.82,0.82,0.81,0.81,0.8,0.79,0.79,0.78,0.78,0.77,0.76,0.76,0.75,0.74,0.74,0.73]],[-104.98,-24.5,-16.29,[2.56,1.97,1.79,1.66,1.53,1.41,1.28,1.2,1.12,1.05,0.97,0.9,0.82,0.75,0.67,0.59,0.51,0.44,0.34,0.27,0.19,0.12,0.06,0.21],[2.56,2.83,2.92,2.95,2.94,2.92,2.85,2.78,2.69,2.6,2.49,2.38,2.25,2.13,2.0,1.87,1.73,1.59,1.39,1.23,1.06,0.88,0.67,0.21]],[-99.35,-24.33,-14.72,[2.66,2.15,1.94,1.78,1.64,1.51,1.34,1.22,1.12,1.03,0.94,0.84,0.74,0.64,0.54,0.45,0.36,0.27,0.15,0.06,-0.04,-0.13,-0.19,-0.1],[2.66,3.01,3.11,3.14,3.12,3.08,3.0,2.91,2.81,2.69,2.57,2.43,2.29,2.15,1.99,1.83,1.65,1.47,1.23,1.04,0.84,0.63,0.4,-0.1]],[-91.86,-23.89,-12.15,[2.8,2.26,2.05,1.85,1.67,1.5,1.29,1.15,1.01,0.88,0.76,0.64,0.51,0.38,0.26,0.13,0.01,-0.11,-0.27,-0.39,-0.51,-0.64,-0.76,-0.68],[2.8,3.3,3.41,3.43,3.41,3.36,3.23,3.1,2.96,2.8,2.64,2.46,2.28,2.09,1.89,1.67,1.46,1.25,0.95,0.71,0.47,0.21,-0.09,-0.68]],[-86.23,-23.46,-9.91,[3.0,2.33,2.06,1.84,1.64,1.45,1.21,1.04,0.87,0.71,0.56,0.4,0.25,0.09,-0.07,-0.22,-0.37,-0.53,-0.74,-0.9,-1.06,-1.22,-1.38,-1.11],[3.0,3.51,3.63,3.66,3.63,3.56,3.4,3.25,3.08,2.89,2.68,2.47,2.24,2.01,1.77,1.52,1.26,1.0,0.62,0.33,0.02,-0.31,-0.65,-1.11]],[-78.73,-22.81,-7.02,[2.97,2.42,2.09,1.82,1.58,1.35,1.05,0.83,0.63,0.43,0.22,0.02,-0.18,-0.39,-0.59,-0.8,-1.02,-1.24,-1.54,-1.76,-1.98,-2.2,-2.42,-2.34],[2.97,3.75,3.89,3.93,3.87,3.77,3.56,3.37,3.17,2.93,2.68,2.42,2.15,1.86,1.55,1.22,0.89,0.54,0.05,-0.32,-0.7,-1.09,-1.51,-2.34]],[-73.11,-22.29,-4.96,[3.32,2.48,2.14,1.83,1.53,1.26,0.91,0.66,0.42,0.17,-0.07,-0.32,-0.56,-0.82,-1.07,-1.34,-1.61,-1.88,-2.23,-2.49,-2.75,-3.01,-3.28,-3.18],[3.32,3.92,4.07,4.11,4.05,3.92,3.69,3.48,3.24,2.97,2.67,2.37,2.05,1.7,1.33,0.94,0.55,0.14,-0.44,-0.88,-1.34,-1.8,-2.28,-3.18]],[-65.61,-21.39,-2.45,[3.29,2.52,2.13,1.78,1.44,1.12,0.7,0.4,0.1,-0.2,-0.49,-0.8,-1.12,-1.44,-1.75,-2.07,-2.38,-2.69,-3.12,-3.43,-3.74,-4.05,-4.34,-4.23],[3.29,4.2,4.36,4.35,4.27,4.14,3.87,3.63,3.35,3.04,2.7,2.33,1.93,1.51,1.07,0.6,0.12,-0.38,-1.07,-1.61,-2.15,-2.71,-3.29,-4.23]],[-59.99,-20.64,-0.73,[3.61,2.59,2.17,1.78,1.4,1.05,0.6,0.26,-0.07,-0.4,-0.74,-1.08,-1.43,-1.79,-2.15,-2.49,-2.84,-3.18,-3.66,-4.0,-4.33,-4.66,-4.99,-4.66],[3.61,4.35,4.52,4.53,4.45,4.29,4.01,3.77,3.49,3.17,2.81,2.39,1.95,1.48,0.99,0.48,-0.05,-0.58,-1.35,-1.97,-2.58,-3.21,-3.85,-4.66]],[-52.49,-19.37,1.03,[3.67,2.67,2.2,1.79,1.38,1.0,0.51,0.13,-0.24,-0.59,-0.95,-1.34,-1.74,-2.12,-2.49,-2.86,-3.23,-3.61,-4.1,-4.47,-4.84,-5.2,-5.55,-5.34],[3.67,4.63,4.79,4.79,4.71,4.58,4.3,4.04,3.73,3.4,3.0,2.57,2.12,1.61,1.09,0.54,-0.04,-0.66,-1.54,-2.21,-2.89,-3.59,-4.33,-5.34]],[-46.87,-18.26,1.87,[3.83,2.76,2.28,1.85,1.43,1.0,0.49,0.13,-0.25,-0.63,-1.02,-1.41,-1.8,-2.21,-2.6,-2.99,-3.38,-3.76,-4.27,-4.66,-5.04,-5.41,-5.78,-5.52],[3.83,4.83,5.04,5.04,4.96,4.83,4.57,4.32,4.01,3.66,3.27,2.85,2.38,1.86,1.31,0.74,0.12,-0.53,-1.44,-2.15,-2.89,-3.65,-4.45,-5.52]],[-39.37,-16.44,2.4,[4.24,2.88,2.39,1.93,1.5,1.1,0.56,0.15,-0.24,-0.62,-1.02,-1.43,-1.83,-2.24,-2.65,-3.06,-3.46,-3.86,-4.39,-4.78,-5.17,-5.55,-5.91,-5.78],[4.24,5.09,5.3,5.35,5.3,5.17,4.92,4.68,4.39,4.07,3.69,3.27,2.8,2.27,1.71,1.11,0.47,-0.22,-1.2,-1.97,-2.75,-3.57,-4.44,-5.78]],[-33.74,-14.94,2.41,[4.17,3.03,2.49,2.03,1.58,1.15,0.6,0.19,-0.22,-0.61,-1.0,-1.41,-1.84,-2.26,-2.68,-3.09,-3.5,-3.9,-4.45,-4.86,-5.26,-5.66,-6.04,-5.83],[4.17,5.26,5.47,5.5,5.48,5.4,5.18,4.96,4.7,4.39,3.99,3.54,3.06,2.53,1.95,1.34,0.68,-0.03,-1.02,-1.81,-2.64,-3.52,-4.45,-5.83]],[-26.24,-12.74,2.22,[4.54,3.19,2.56,2.03,1.56,1.11,0.52,0.1,-0.32,-0.74,-1.15,-1.56,-1.99,-2.42,-2.84,-3.27,-3.69,-4.11,-4.67,-5.09,-5.51,-5.89,-6.25,-6.04],[4.54,5.42,5.57,5.59,5.58,5.54,5.42,5.27,5.05,4.76,4.35,3.89,3.4,2.86,2.25,1.59,0.9,0.15,-0.96,-1.82,-2.7,-3.64,-4.66,-6.04]],[-20.62,-11.38,2.17,[4.22,2.85,2.19,1.65,1.15,0.67,0.07,-0.37,-0.81,-1.25,-1.67,-2.12,-2.56,-3.01,-3.44,-3.88,-4.32,-4.75,-5.31,-5.72,-6.12,-6.49,-6.75,-6.44],[4.22,5.4,5.55,5.58,5.59,5.59,5.56,5.52,5.45,5.32,5.08,4.7,4.22,3.69,3.09,2.4,1.62,0.78,-0.41,-1.39,-2.4,-3.44,-4.62,-6.44]],[-13.12,-10.01,3.74,[3.31,1.61,0.75,0.1,-0.51,-1.11,-1.92,-2.52,-3.11,-3.71,-4.31,-4.91,-5.54,-6.16,-6.68,-6.94,-6.98,-6.97,-6.95,-6.95,-6.95,-6.96,-6.92,-6.59],[3.31,4.11,4.15,4.15,4.13,4.09,4.03,4.0,3.96,3.92,3.87,3.83,3.77,3.72,3.69,3.65,3.53,3.23,2.33,1.24,-0.21,-1.79,-3.64,-6.59]],[-7.5,-9.37,6.38,[1.99,-0.49,-1.93,-3.32,-4.89,-6.17,-6.92,-6.96,-6.95,-6.9,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.89,-6.92,-6.94,-6.94,-6.93,-6.93,-6.9,-5.03],[1.99,2.73,2.76,2.78,2.77,2.75,2.72,2.7,2.68,2.65,2.62,2.58,2.54,2.53,2.5,2.48,2.47,2.47,2.45,2.42,2.39,2.32,2.06,-5.03]],[0.0,-9.55,9.55,[0.67,-6.88,-6.93,-6.94,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.88,-6.94,-6.93,-6.88,-2.12],[0.67,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,2.3,-2.12]]];
+const BDEF=[[0.0875,10,0],[0.175,17.7,42.71],[0.2625,19.4,34.51],[0.35,22,30.07],[0.4374,22.4,26.57],[0.5249,21.9,24.23],[0.6124,19.3,21.25],[0.6999,15.8,18.44],[0.7874,12.6,18.44],[0.8749,9.5,18.44],[0.9624,6.3,18.44]];
+const R=112.5, NU=24;
+const concepts=[
+{id:'blade',en:'Blade',zh:'桨叶',def:'从桨毂向外延伸、与空气交换动量的旋转翼面。',body:'这不是一块平板，而是一串不同半径位置的翼型截面连续连接成的三维曲面。网页现在用的外形来自你上传的 XOAR9x7 STL 截面。',formula:'3D blade = loft{ airfoil(r) }',bul:['沿半径会同时改变弦长、扭转和厚度。','把桨叶理解成“旋转的机翼”是后续气动与噪声分析的起点。']},
+{id:'hub',en:'Hub',zh:'桨毂',def:'中心与电机轴连接、把扭矩传给两片桨叶的实体。',body:'桨毂不是桨根。桨毂是中央连接件；桨根是桨叶刚离开中央连接区域的那一段。',formula:'motor torque → hub → blade',bul:['点模型中央也可以直接选中 Hub。','这里主要受结构与连接约束，而不是主要升力区。']},
+{id:'root',en:'Root',zh:'桨根',def:'桨叶靠近桨毂的起始区域。',body:'桨根处半径 r 较小，所以局部圆周速度较低，但结构弯矩和连接强度非常重要。',formula:'Vₜ = ωr',bul:['本页用约 0.18R 的真实截面标示桨根。','Root 与 Hub 是相邻但不同的实体概念。']},
+{id:'tip',en:'Tip',zh:'桨尖',def:'桨叶最外端，通常是局部圆周速度最高的区域。',body:'压力面与吸力面在桨尖处相遇，容易形成 tip vortex。无人机低噪设计经常把外段和桨尖作为重点。',formula:'V_tip ≈ ωR',bul:['桨尖涡、尖端载荷和高速度共同影响噪声。','后掠、收窄、上反/下反经常集中在外段。']},
+{id:'leading',en:'Leading edge',zh:'前缘',def:'翼型截面最先迎接相对来流的那条边。',body:'前缘是一条沿展向延伸的空间曲线。这里的蓝线直接从 XOAR STL 每个切片的圆钝鼻端提取。',formula:'relative flow → LE → airfoil → TE',bul:['前缘不是“离中心最远的边”。','每一个翼型截面都有自己的前缘点，把它们连起来才是整片前缘。']},
+{id:'trailing',en:'Trailing edge',zh:'后缘',def:'气流经过翼型后离开的薄边。',body:'后缘同样是一条空间曲线。边界层湍流经过后缘散射，是旋翼宽带噪声的重要来源之一。',formula:'boundary-layer turbulence + TE → broadband noise',bul:['不要把 trailing edge（后缘）与 sweep（后掠）混淆。','本页红线由 STL 截面的尖薄尾端提取。']},
+{id:'chord',en:'Chord / chord length',zh:'弦 / 弦长 c',def:'某一翼型截面中，从前缘到后缘的参考直线；长度就是弦长 c。',body:'弦不是实体上真的有一根杆。拖下面的 r/R 滑块，黄色弦线会沿真实桨叶移动。',formula:'c(r) = |LE(r) − TE(r)|',bul:['c(r) 决定每个半径处叶片有多“宽”。','右侧数值优先显示 blade_definition.csv 中的弦长插值。']},
+{id:'airfoil',en:'Airfoil section',zh:'翼型截面',def:'在某个半径位置切开桨叶得到的二维截面轮廓。',body:'黄色闭合线就是从真实 STL 切片得到的截面。把很多这样的截面沿半径放样，才得到完整三维桨叶。',formula:'blade ≈ loft(section₁, section₂, …)',bul:['滑块可以让你把切面从桨根一路移动到桨尖。','截面本身包含前缘、后缘、弦线、厚度和弯度。']},
+{id:'twist',en:'Twist',zh:'扭转',def:'不同 r/R 位置的翼型截面具有不同几何安装角。',body:'因为圆周速度随半径增加，如果所有截面角度都一样，整片桨叶的局部迎角会很不均匀。爆炸图会同时抽出多组真实截面，最容易看懂“扭”。',formula:'θ = θ(r),   Vₜ = ωr',bul:['你的定义文件在 0.35R 给出约 30.07°，0.70R 附近约 18.44°。','Twist 是沿展向的角度分布，不等同于名义 pitch。']},
+{id:'pitch',en:'Pitch',zh:'桨距',def:'把螺旋桨想象成螺丝时，理论上一圈对应的轴向几何前进量。',body:'XOAR 9×7 的“7”表示名义 7 英寸桨距，约 177.8 mm/rev。本页用黄色螺旋线把这个空间概念画出来。',formula:'nominal pitch = 7 in ≈ 177.8 mm/rev',bul:['实际飞行每转一圈并不会严格前进 177.8 mm。','固定桨距螺旋桨仍然可以具有明显的径向 twist。']},
+{id:'sweep',en:'Sweep',zh:'后掠',def:'从转轴方向俯视时，桨叶参考线在旋转平面内前后弯曲。',body:'蓝色曲线显示 XOAR 实体的四分之一弦积叠线，黄色直线是纯径向参考。这个 XOAR 桨不是典型“大后掠低噪桨”，正好可以和 DJI 的后掠桨尖专利形成对比。',formula:'sweep = in-plane stacking offset',bul:['后掠是“旋转平面内”的变化。','它和上反/下反（平面外）是两个不同维度。']},
+{id:'dihedral',en:'Dihedral / Anhedral',zh:'上反 / 下反',def:'桨叶参考线相对旋转平面向轴向一侧或另一侧偏移。',body:'切到侧视后最清楚：透明圆盘是旋转平面，蓝线是实际四分之一弦积叠线。XOAR 这副桨总体较平，而 DJI 新专利会故意做更明显的三维桨尖。',formula:'out-of-plane offset relative to rotor plane',bul:['Dihedral/Anhedral 是平面外几何。','与 sweep、twist、chord 可以同时存在。']},
+{id:'plane',en:'Rotation plane',zh:'旋转平面',def:'与电机轴垂直、用来定义螺旋桨旋转几何的基准平面。',body:'后掠发生在这个平面内；上反/下反相对这个平面向外偏。',formula:'rotor axis ⟂ rotation plane',bul:['蓝色透明圆盘只是参考，不是实体零件。','分析桨尖间隙、涵道和三维桨尖时都需要这个基准。']},
+{id:'surfaces',en:'Blade surfaces',zh:'桨叶两侧表面',def:'翼型的两个主要表面。在具体旋向与工况下，它们形成压力差并产生气动力。',body:'为了避免错误地把固定的“上/下”永久叫成压力面/吸力面，本页先把 STL 的两侧表面分色。实际 pressure/suction 命名要结合旋向、来流和推力方向。',formula:'Δp across blade surfaces → aerodynamic force',bul:['桨尖处两侧流动会绕流连通并形成桨尖涡。','后续噪声章节可以把表面压力脉动直接映射到这两个面上。']},
+{id:'duct',en:'Duct / shroud',zh:'涵道 / 外罩',def:'包围螺旋桨外缘的一圈环形气动结构；不是桨叶本身。',body:'XOAR 9×7 本身是开放桨。选择这一项后出现的透明圆环只是教学叠加，用来说明“涵道到底是哪一个实体”。',formula:'open propeller + annular shroud → ducted fan',bul:['涵道会改变桨尖附近流场。','涵道并不意味着所有工况下一定更安静。']}
 ];
-const map=Object.fromEntries(data.map(x=>[x.id,x]));
-const list=document.getElementById("concepts");
-for(const c of data){const b=document.createElement("button");b.className="concept";b.dataset.id=c.id;b.innerHTML="<b>"+c.en+"</b><span>"+c.zh+"</span>";b.onclick=()=>select(c.id,true);list.appendChild(b)}
-const en=document.getElementById("en"),zh=document.getElementById("zh"),def=document.getElementById("def"),body=document.getElementById("body"),eq=document.getElementById("eq"),bullets=document.getElementById("bullets"),badge=document.getElementById("badge"),loading=document.getElementById("loading"),tip=document.getElementById("tip");
 
-const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x07111f,.035);
-const camera=new THREE.PerspectiveCamera(40,1,.01,100);camera.position.set(4.9,-6.6,4.3);
-const holder=document.getElementById("three");
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;holder.appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);controls.minDistance=2.4;controls.maxDistance=14;controls.autoRotateSpeed=.8;
-scene.add(new THREE.HemisphereLight(0xc9edff,0x102235,1.35));const dl=new THREE.DirectionalLight(0xffffff,2.3);dl.position.set(4,-4,6);scene.add(dl);const fl=new THREE.DirectionalLight(0x6ed8ff,1.1);fl.position.set(-5,3,1);scene.add(fl);
-const grid=new THREE.GridHelper(11,22,0x23425d,0x152d42);grid.rotation.x=Math.PI/2;grid.position.z=-1.1;grid.material.transparent=true;grid.material.opacity=.28;scene.add(grid);
+const list=document.getElementById('concepts');
+for(const c of concepts){const b=document.createElement('button');b.className='concept';b.dataset.id=c.id;b.innerHTML=`<b>${c.en}</b><span>${c.zh}</span>`;b.onclick=()=>activate(c.id,true);list.appendChild(b)}
+const holder=document.getElementById('scene'),viewer=document.getElementById('viewer');
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x0a0d12,.0023);
+const camera=new THREE.PerspectiveCamera(38,1,.1,1600);camera.position.set(185,-255,150);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.shadowMap.enabled=true;holder.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.075;controls.target.set(0,0,0);controls.minDistance=120;controls.maxDistance=650;controls.autoRotateSpeed=.75;
+scene.add(new THREE.HemisphereLight(0xc8e8ff,0x14181d,1.45));const key=new THREE.DirectionalLight(0xffffff,3.0);key.position.set(170,-180,260);key.castShadow=true;scene.add(key);const rim=new THREE.DirectionalLight(0x63d9ff,1.8);rim.position.set(-220,150,120);scene.add(rim);const warm=new THREE.DirectionalLight(0xffd28a,1.0);warm.position.set(40,220,-80);scene.add(warm);
+const ground=new THREE.Mesh(new THREE.CircleGeometry(150,96),new THREE.MeshBasicMaterial({color:0x05080c,transparent:true,opacity:.28,depthWrite:false}));ground.position.z=-19;scene.add(ground);
 
-const SCALE=36;
-const group=new THREE.Group();group.scale.setScalar(SCALE);scene.add(group);
-const helperGroup=new THREE.Group();group.add(helperGroup);
-let wholeMesh,baseGeometry,faces,verts,explode=false,wire=false;
-const helperSets={};
-const pickables=[];
+const matA=new THREE.MeshPhysicalMaterial({color:0xbcc4cb,metalness:.08,roughness:.28,clearcoat:.28,clearcoatRoughness:.32,side:THREE.DoubleSide});
+const matB=matA.clone();
+const meshGroup=new THREE.Group();scene.add(meshGroup);const pickables=[];
+function p(row,j,upper,mirror){const x=mirror?-row[0]:row[0];const y0=row[1]+(row[2]-row[1])*(j/(NU-1));const y=mirror?-y0:y0;const z=row[upper?4:3][j];return new THREE.Vector3(x,y,z)}
+function surfaceGeom(upper,mirror){const pos=[],idx=[];for(let i=0;i<HALF.length;i++)for(let j=0;j<NU;j++){const v=p(HALF[i],j,upper,mirror);pos.push(v.x,v.y,v.z)}for(let i=0;i<HALF.length-1;i++)for(let j=0;j<NU-1;j++){const a=i*NU+j,b=a+1,c=(i+1)*NU+j,d=c+1;if(upper!==mirror)idx.push(a,c,b,b,c,d);else idx.push(a,b,c,b,d,c)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g}
+const meshes=[];for(const mirror of [false,true])for(const upper of [false,true]){const m=new THREE.Mesh(surfaceGeom(upper,mirror),upper?matA:matB);m.userData={kind:'model',upper};m.castShadow=true;m.receiveShadow=true;meshGroup.add(m);meshes.push(m);pickables.push(m)}
 
-function base64ToBytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
-async function ungzip(u){const ds=new DecompressionStream("gzip");const ab=await new Response(new Blob([u]).stream().pipeThrough(ds)).arrayBuffer();return ab}
-async function loadMesh(){
- const files=Array.from({length:13},(_,i)=>"assets/xoar9x7/"+String(i).padStart(3,"0")+".b64");
- const texts=await Promise.all(files.map(x=>fetch(x).then(r=>{if(!r.ok)throw new Error(x+" "+r.status);return r.text()})));
- const raw=await ungzip(base64ToBytes(texts.join("")));
- const dv=new DataView(raw);const nv=dv.getUint32(0,true),nf=dv.getUint32(4,true);
- const pos=new Float32Array(raw,8,nv*3);const idx=new Uint16Array(raw,8+nv*12,nf*3);
- verts=pos;faces=idx;
- const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setIndex(new THREE.BufferAttribute(idx,1));g.computeVertexNormals();baseGeometry=g;
- const mat=new THREE.MeshStandardMaterial({color:0x9db5c8,roughness:.35,metalness:.12,side:THREE.DoubleSide});
- wholeMesh=new THREE.Mesh(g,mat);wholeMesh.userData.kind="whole";group.add(wholeMesh);pickables.push(wholeMesh);
- buildHelpers();loading.classList.add("hide");select("leading",false);
-}
-function v3(i){return new THREE.Vector3(verts[i*3],verts[i*3+1],verts[i*3+2])}
-function subset(test,color=0x6ed8ff,opacity=.86){
- const p=[];for(let i=0;i<faces.length;i+=3){const a=v3(faces[i]),b=v3(faces[i+1]),c=v3(faces[i+2]);const ctr=a.clone().add(b).add(c).multiplyScalar(1/3);if(test(ctr,a,b,c))p.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z)}
- const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();
- return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.08,roughness:.38,metalness:.05,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:opacity>.5}));
-}
-function line(points,color=0x6ed8ff,w=2,closed=false){
- const pts=closed?[...points,points[0]]:points;const g=new THREE.BufferGeometry().setFromPoints(pts);return new THREE.Line(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.98}));
-}
-function stationPoints(x,width=.0023){
- const arr=[];for(let i=0;i<verts.length/3;i++){const p=v3(i);if(Math.abs(p.x-x)<width)arr.push(p)}return arr
-}
-function edgeCurve(sign,leading=true){
- const pts=[];const xs=[];for(let k=0;k<22;k++)xs.push(sign*(.025+k*(.083/21)));
- for(const x of xs){const a=stationPoints(x,.0022);if(!a.length)continue;const side=(x>0?1:-1)*(leading?1:-1);let p=a[0];for(const q of a)if(side*q.y>side*p.y)p=q;pts.push(p.clone())}return line(pts,leading?0x6ed8ff:0xff7183)
-}
-function sectionSegments(x,color=0xffc85a){
- const pts=[];for(let i=0;i<faces.length;i+=3){const tri=[v3(faces[i]),v3(faces[i+1]),v3(faces[i+2])],hits=[];for(let e=0;e<3;e++){const a=tri[e],b=tri[(e+1)%3];if((a.x-x)*(b.x-x)<=0 && Math.abs(a.x-b.x)>1e-9){const t=(x-a.x)/(b.x-a.x);if(t>=0&&t<=1)hits.push(a.clone().lerp(b,t))}}if(hits.length>=2){pts.push(hits[0],hits[1])}}
- const g=new THREE.BufferGeometry().setFromPoints(pts);return new THREE.LineSegments(g,new THREE.LineBasicMaterial({color}))
-}
-function sectionEdgePoints(x){
- const a=stationPoints(x,.002);if(!a.length)return null;let lo=a[0],hi=a[0];for(const p of a){if(p.y<lo.y)lo=p;if(p.y>hi.y)hi=p}return {lo,hi,center:lo.clone().add(hi).multiplyScalar(.5)}
-}
-function buildHelpers(){
- helperSets.blade=[subset(p=>Math.abs(p.x)>.022,0x6ed8ff,.72)];
- helperSets.hub=[subset(p=>Math.abs(p.x)<=.025,0xffc85a,.9)];
- helperSets.root=[subset(p=>Math.abs(p.x)>.018&&Math.abs(p.x)<.043,0x83e1a8,.86)];
- helperSets.tip=[subset(p=>Math.abs(p.x)>.096,0xffc85a,.9)];
- helperSets.leading=[edgeCurve(1,true),edgeCurve(-1,true)];
- helperSets.trailing=[edgeCurve(1,false),edgeCurve(-1,false)];
- const sec=sectionSegments(.078);helperSets.airfoil=[sec];
- const ep=sectionEdgePoints(.078);helperSets.chord=ep?[line([ep.lo,ep.hi],0xffc85a)]:[];
- helperSets.twist=[.035,.055,.077,.098].map(x=>sectionSegments(x,0xffc85a));
- const centers=[];for(let x=.026;x<=.104;x+=.006){const e=sectionEdgePoints(x);if(e)centers.push(e.center)}helperSets.sweep=[line(centers,0x6ed8ff),line([new THREE.Vector3(.022,0,0),new THREE.Vector3(.109,0,0)],0xffc85a)];
- helperSets.dihedral=[line(centers,0x6ed8ff),line([new THREE.Vector3(.022,0,0),new THREE.Vector3(.109,0,0)],0xffc85a)];
- const plane=new THREE.Mesh(new THREE.CircleGeometry(.118,96),new THREE.MeshBasicMaterial({color:0x6ed8ff,transparent:true,opacity:.09,side:THREE.DoubleSide,depthWrite:false}));helperSets.plane=[plane];
- const duct=new THREE.Mesh(new THREE.TorusGeometry(.121,.0045,18,128),new THREE.MeshStandardMaterial({color:0x6ed8ff,transparent:true,opacity:.5,roughness:.25}));helperSets.duct=[duct];
- const hp=[];const pitch=.070;for(let i=0;i<180;i++){const t=i/179,a=t*Math.PI*2*1.03;hp.push(new THREE.Vector3(.126*Math.cos(a),.126*Math.sin(a),-.035+t*pitch))}helperSets.pitch=[line(hp,0xffc85a)];
- const upper=subset((ctr,a,b,c)=>{const n=b.clone().sub(a).cross(c.clone().sub(a));return n.z>0},0x6ed8ff,.72);
- const lower=subset((ctr,a,b,c)=>{const n=b.clone().sub(a).cross(c.clone().sub(a));return n.z<=0},0xffc85a,.72);helperSets.surfaces=[upper,lower];
- for(const arr of Object.values(helperSets))for(const o of arr){o.visible=false;helperGroup.add(o)}
- // explosion pieces
- const left=subset(p=>p.x<-.022,0xa9bfd0,.98),right=subset(p=>p.x>.022,0xa9bfd0,.98),hub=subset(p=>Math.abs(p.x)<=.025,0x60798c,.98);
- helperSets.explodeParts=[left,right,hub];for(const o of helperSets.explodeParts){o.visible=false;helperGroup.add(o)}
-}
-function hideHelpers(){for(const [k,arr] of Object.entries(helperSets)){if(k==="explodeParts")continue;for(const o of arr)o.visible=false}if(wholeMesh){wholeMesh.material.color.set(0x9db5c8);wholeMesh.material.emissive.set(0);wholeMesh.material.opacity=1;wholeMesh.material.transparent=false}}
-function select(id,assist=false){
- if(!map[id]||!wholeMesh)return;hideHelpers();document.querySelectorAll(".concept").forEach(b=>b.classList.toggle("active",b.dataset.id===id));
- const c=map[id];en.textContent=c.en;zh.textContent=c.zh;def.textContent=c.def;body.textContent=c.body;eq.textContent=c.eq;bullets.innerHTML="";for(const x of c.bul){const li=document.createElement("li");li.textContent=x;bullets.appendChild(li)}
- if(helperSets[id])for(const o of helperSets[id])o.visible=true;
- if(["blade","hub","root","tip","surfaces"].includes(id)){wholeMesh.material.transparent=true;wholeMesh.material.opacity=.15}
- if(id==="dihedral"){for(const o of helperSets.plane)o.visible=true}
- badge.innerHTML="<strong>"+c.en+" · "+c.zh+"：</strong>"+c.def;
- if(assist&&id==="sweep")setCam(new THREE.Vector3(0,0,7.1),new THREE.Vector3(0,0,0));
- if(assist&&["dihedral","pitch"].includes(id))setCam(new THREE.Vector3(0,-7,1.5),new THREE.Vector3(0,0,0));
- if(assist&&["airfoil","chord","twist"].includes(id))setCam(new THREE.Vector3(4.8,-5.8,3.4),new THREE.Vector3(.4,0,0));
-}
-function setCam(p,t){camera.position.copy(p);controls.target.copy(t);controls.update()}
-document.getElementById("home").onclick=()=>setCam(new THREE.Vector3(4.9,-6.6,4.3),new THREE.Vector3(0,0,0));
-document.getElementById("top").onclick=()=>setCam(new THREE.Vector3(0,0,7.1),new THREE.Vector3(0,0,0));
-document.getElementById("side").onclick=()=>setCam(new THREE.Vector3(0,-7,1.1),new THREE.Vector3(0,0,0));
-document.getElementById("spin").onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.classList.toggle("on",controls.autoRotate)};
-document.getElementById("wire").onclick=e=>{wire=!wire;if(wholeMesh)wholeMesh.material.wireframe=wire;for(const o of helperSets.explodeParts||[])o.material.wireframe=wire;e.currentTarget.classList.toggle("on",wire)};
-document.getElementById("explode").onclick=e=>{if(!wholeMesh)return;explode=!explode;e.currentTarget.classList.toggle("on",explode);wholeMesh.visible=!explode;const [l,r,h]=helperSets.explodeParts;for(const o of [l,r,h])o.visible=explode;l.position.x+=(explode?-0.018:0);r.position.x+=(explode?.018:0);h.position.z=explode?-.018:0;if(!explode){l.position.set(0,0,0);r.position.set(0,0,0);h.position.set(0,0,0)}badge.innerHTML=explode?"<strong>教学爆炸图：</strong>把真实 STL 按空间区域分成左桨叶、桨毂、右桨叶，仅用于理解结构，不代表真实可拆装关系。":"<strong>XOAR 真实模型：</strong>已恢复整体显示。"};
+function tube(points,color,r=1.0,opacity=1){const curve=new THREE.CatmullRomCurve3(points);const g=new THREE.TubeGeometry(curve,Math.max(16,points.length*5),r,8,false);const m=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.23,roughness:.28,transparent:opacity<1,opacity});return new THREE.Mesh(g,m)}
+function line(points,color,width=1){const g=new THREE.BufferGeometry().setFromPoints(points);return new THREE.Line(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.92}))}
+function loopAt(rr,mirror=false,color=0xffca63,zShift=0){let best=HALF[0];let dist=1e9;for(const row of HALF){const d=Math.abs(Math.abs(row[0])/R-rr);if(d<dist){dist=d;best=row}}const pts=[];for(let j=0;j<NU;j++){const v=p(best,j,true,mirror);v.z+=zShift;pts.push(v)}for(let j=NU-1;j>=0;j--){const v=p(best,j,false,mirror);v.z+=zShift;pts.push(v)}pts.push(pts[0].clone());const l=line(pts,color);l.material.linewidth=2;l.userData.rr=Math.abs(best[0])/R;return l}
+function midEdge(row,j,mirror){const a=p(row,j,true,mirror),b=p(row,j,false,mirror);return a.add(b).multiplyScalar(.5)}
+function quarter(row,mirror){const le=midEdge(row,0,mirror),te=midEdge(row,NU-1,mirror);return le.clone().lerp(te,.25)}
+const helpers={};function group(name){const g=new THREE.Group();g.visible=false;scene.add(g);helpers[name]=g;return g}
+const leading=group('leading'),trailing=group('trailing');for(const mirror of [false,true]){const le=[],te=[];for(const row of HALF){le.push(midEdge(row,0,mirror));te.push(midEdge(row,NU-1,mirror))}const a=tube(le,0x62d8ff,1.1),b=tube(te,0xff7777,.9);a.userData.concept='leading';b.userData.concept='trailing';leading.add(a);trailing.add(b);pickables.push(a,b)}
+const root=group('root');root.add(loopAt(.18,false,0x83e6b5),loopAt(.18,true,0x83e6b5));
+const tip=group('tip');tip.add(loopAt(.985,false,0xffca63),loopAt(.985,true,0xffca63));
+const hub=group('hub');const hubRing=new THREE.Mesh(new THREE.CylinderGeometry(11.5,11.5,18,64,1,true),new THREE.MeshStandardMaterial({color:0xffca63,emissive:0xffca63,emissiveIntensity:.12,transparent:true,opacity:.38,side:THREE.DoubleSide}));hubRing.rotation.x=Math.PI/2;hub.add(hubRing);
+const plane=group('plane');const disk=new THREE.Mesh(new THREE.CircleGeometry(118,96),new THREE.MeshBasicMaterial({color:0x62d8ff,transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false}));plane.add(disk);const ring=new THREE.Mesh(new THREE.RingGeometry(115,116,128),new THREE.MeshBasicMaterial({color:0x62d8ff,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false}));plane.add(ring);
+const sweep=group('sweep');for(const mirror of [false,true]){const q=HALF.map(row=>quarter(row,mirror));sweep.add(tube(q,0x62d8ff,.72));const tipx=mirror?R:-R;sweep.add(line([new THREE.Vector3(0,0,0),new THREE.Vector3(tipx,0,0)],0xffca63))}
+const dihedral=group('dihedral');for(const mirror of [false,true])dihedral.add(tube(HALF.map(row=>quarter(row,mirror)),0x62d8ff,.72));
+const duct=group('duct');const dw=new THREE.Mesh(new THREE.CylinderGeometry(119,119,22,128,1,true),new THREE.MeshPhysicalMaterial({color:0x62d8ff,transparent:true,opacity:.13,roughness:.2,side:THREE.DoubleSide,depthWrite:false}));dw.rotation.x=Math.PI/2;duct.add(dw);for(const z of [-11,11]){const t=new THREE.Mesh(new THREE.TorusGeometry(119,2,12,128),new THREE.MeshStandardMaterial({color:0x62d8ff,transparent:true,opacity:.65}));t.position.z=z;duct.add(t)}
+const pitch=group('pitch');{const pts=[],P=177.8,rad=78;for(let i=0;i<=180;i++){const u=i/180,a=u*Math.PI*2;pts.push(new THREE.Vector3(rad*Math.cos(a),rad*Math.sin(a),-P/2+P*u))}pitch.add(tube(pts,0xffca63,.8,.9))}
+const twist=group('twist');for(const rr of [.35,.52,.70,.87]){twist.add(loopAt(rr,false,0xffca63));twist.add(loopAt(rr,true,0xffca63))}
+const section=group('section');const explodeGroup=group('explode');
 
-const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
-renderer.domElement.onpointermove=e=>{if(!wholeMesh)return;const r=renderer.domElement.getBoundingClientRect();mouse.x=(e.clientX-r.left)/r.width*2-1;mouse.y=-(e.clientY-r.top)/r.height*2+1;ray.setFromCamera(mouse,camera);const h=ray.intersectObject(wholeMesh);if(h.length){const p=h[0].point.clone();group.worldToLocal(p);const id=Math.abs(p.x)>.098?"tip":Math.abs(p.x)<.025?"hub":Math.abs(p.x)<.043?"root":"blade";tip.style.display="block";tip.style.left=e.clientX+12+"px";tip.style.top=e.clientY+12+"px";tip.textContent=map[id].en+" · "+map[id].zh;renderer.domElement.style.cursor="pointer";renderer.domElement.onclick=()=>select(id,false)}else{tip.style.display="none";renderer.domElement.style.cursor="grab";renderer.domElement.onclick=null}};
-renderer.domElement.onpointerleave=()=>tip.style.display="none";
+function interpolateDef(rr){let a=BDEF[0],b=BDEF.at(-1);if(rr<=a[0])return a;if(rr>=b[0])return b;for(let i=0;i<BDEF.length-1;i++)if(rr>=BDEF[i][0]&&rr<=BDEF[i+1][0]){a=BDEF[i];b=BDEF[i+1];break}const t=(rr-a[0])/(b[0]-a[0]);return[rr,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
+function nearestRow(rr){let best=HALF[0],d=1e9;for(const row of HALF){const e=Math.abs(Math.abs(row[0])/R-rr);if(e<d){d=e;best=row}}return best}
+function clear(g){while(g.children.length){const o=g.children.pop();o.geometry?.dispose?.()}}
+function updateSection(rr){clear(section);const row=nearestRow(rr);const actual=Math.abs(row[0])/R;const lp=loopAt(actual,false,0xffca63);section.add(lp);const le=midEdge(row,0,false),te=midEdge(row,NU-1,false);section.add(tube([le,te],0xffca63,.65));const d=interpolateDef(rr);document.getElementById('rrLabel').textContent=`r/R = ${rr.toFixed(2)}`;document.getElementById('cVal').textContent=d[1].toFixed(1);document.getElementById('tVal').textContent=d[2].toFixed(1);document.getElementById('rrInfo').textContent=`${rr.toFixed(2)} R`;document.getElementById('cInfo').textContent=`${d[1].toFixed(1)} mm`;document.getElementById('tInfo').textContent=`${d[2].toFixed(1)}°`}
+function buildExplode(){clear(explodeGroup);[.35,.52,.70,.87].forEach((rr,k)=>{const base=loopAt(rr,false,0xffca63);const row=nearestRow(rr);const dz=20+k*12;const ex=loopAt(rr,false,k%2?0x62d8ff:0xffca63,dz);explodeGroup.add(ex);const c=quarter(row,false);explodeGroup.add(line([c,c.clone().add(new THREE.Vector3(0,0,dz))],0x7d8b96))})}
+buildExplode();updateSection(.70);
 
-function resize(){const w=holder.clientWidth,h=holder.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(holder);resize();
-function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();
-loadMesh().catch(err=>{loading.innerHTML='<div class="loader"><b style="color:#ff7183">模型加载失败</b><br><span>'+String(err)+'</span></div>';console.error(err)});
+const en=document.getElementById('en'),zh=document.getElementById('zh'),def=document.getElementById('def'),body=document.getElementById('body'),formula=document.getElementById('formula'),bul=document.getElementById('bullets'),hint=document.getElementById('hint');
+let active='leading',exploded=false,wire=false;
+function resetAppearance(){matA.color.set(0xbcc4cb);matB.color.set(0xbcc4cb);for(const m of [matA,matB]){m.emissive.set(0x000000);m.emissiveIntensity=0;m.opacity=1;m.transparent=false;m.wireframe=wire}for(const g of Object.values(helpers))g.visible=false;section.visible=false;explodeGroup.visible=exploded}
+function activate(id,assist=false){active=id;resetAppearance();document.querySelectorAll('.concept').forEach(x=>x.classList.toggle('active',x.dataset.id===id));const c=concepts.find(x=>x.id===id);en.textContent=c.en;zh.textContent=c.zh;def.textContent=c.def;body.textContent=c.body;formula.textContent=c.formula;bul.innerHTML='';for(const x of c.bul){const li=document.createElement('li');li.textContent=x;bul.appendChild(li)}
+if(helpers[id])helpers[id].visible=true;if(id==='chord'||id==='airfoil'){section.visible=true}if(id==='twist'){twist.visible=true;section.visible=true}if(id==='dihedral'){dihedral.visible=true;plane.visible=true}if(id==='surfaces'){matA.color.set(0x62d8ff);matB.color.set(0xffca63);matA.emissive.set(0x123847);matB.emissive.set(0x463611);matA.emissiveIntensity=.35;matB.emissiveIntensity=.25}if(id==='blade'){matA.emissive.set(0x18445a);matB.emissive.set(0x18445a);matA.emissiveIntensity=.4;matB.emissiveIntensity=.4}if(exploded){explodeGroup.visible=true;matA.transparent=matB.transparent=true;matA.opacity=matB.opacity=.32}
+hint.innerHTML=`<strong>${c.en} · ${c.zh}：</strong>${c.def}`;
+if(assist&&(id==='sweep'||id==='plane'))setCam(new THREE.Vector3(0,0,320));if(assist&&id==='dihedral')setCam(new THREE.Vector3(0,-330,34));}
+function setCam(v){camera.position.copy(v);controls.target.set(0,0,0);controls.update()}
+document.getElementById('reset').onclick=()=>setCam(new THREE.Vector3(185,-255,150));document.getElementById('top').onclick=()=>setCam(new THREE.Vector3(0,0,320));document.getElementById('side').onclick=()=>setCam(new THREE.Vector3(0,-335,35));
+document.getElementById('rotate').onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.classList.toggle('on',controls.autoRotate)};
+document.getElementById('wire').onclick=e=>{wire=!wire;e.currentTarget.classList.toggle('on',wire);matA.wireframe=matB.wireframe=wire};
+document.getElementById('explode').onclick=e=>{exploded=!exploded;e.currentTarget.classList.toggle('on',exploded);activate(active,false);if(exploded)hint.innerHTML='<strong>截面爆炸图：</strong>抽出 0.35R / 0.52R / 0.70R / 0.87R 的真实 STL 截面，沿轴向分层展示。它是教学拆解，不是实际装配关系。'};
+document.getElementById('rr').oninput=e=>{const rr=+e.target.value;updateSection(rr);if(!['chord','airfoil','twist'].includes(active))activate('airfoil',false)};
+
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),tooltip=document.getElementById('tooltip');function cast(ev){const r=renderer.domElement.getBoundingClientRect();mouse.x=(ev.clientX-r.left)/r.width*2-1;mouse.y=-(ev.clientY-r.top)/r.height*2+1;ray.setFromCamera(mouse,camera);return ray.intersectObjects(pickables,true)}
+renderer.domElement.addEventListener('pointermove',ev=>{const h=cast(ev)[0];if(!h){tooltip.style.display='none';return}let id=h.object.userData.concept;if(!id&&h.object.userData.kind==='model'){const q=Math.hypot(h.point.x,h.point.y);id=q<13?'hub':Math.abs(h.point.x)>105?'tip':Math.abs(h.point.x)<28?'root':'blade'}const c=concepts.find(x=>x.id===id);if(c){tooltip.style.display='block';tooltip.style.left=ev.clientX+12+'px';tooltip.style.top=ev.clientY+12+'px';tooltip.textContent=c.en+' · '+c.zh}});renderer.domElement.addEventListener('pointerleave',()=>tooltip.style.display='none');renderer.domElement.addEventListener('click',ev=>{const h=cast(ev)[0];if(!h)return;let id=h.object.userData.concept;if(!id&&h.object.userData.kind==='model'){const q=Math.hypot(h.point.x,h.point.y);id=q<13?'hub':Math.abs(h.point.x)>105?'tip':Math.abs(h.point.x)<28?'root':'blade'}if(id)activate(id,false)});
+function resize(){const w=holder.clientWidth,h=holder.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(holder);window.addEventListener('resize',resize);resize();activate('leading',false);setTimeout(()=>document.getElementById('loading').classList.add('hide'),350);
+function tick(){requestAnimationFrame(tick);controls.update();renderer.render(scene,camera)}tick();
 </script>
-</body>
-</html>
+</body></html>
