@@ -421,7 +421,7 @@ function buildFeatures(){
  const diCurve=tube(ep.mid,0x62d4ff,.018);
  const duct=new THREE.Group(),wall=new THREE.Mesh(new THREE.CylinderGeometry(R*1.075,R*1.075,.62,128,1,true),new THREE.MeshPhysicalMaterial({color:0x62d4ff,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false,roughness:.25}));wall.rotation.x=Math.PI/2;const ta=new THREE.Mesh(new THREE.TorusGeometry(R*1.075,.10,16,128),new THREE.MeshStandardMaterial({color:0x62d4ff,transparent:true,opacity:.65}));ta.position.z=.31;const tb=ta.clone();tb.position.z=-.31;duct.add(wall,ta,tb);duct.visible=false;helperGroup.add(duct);for(const x of [wall,ta,tb]){x.userData.concept="duct";pickables.push(x)}
  const hp=[];for(let i=0;i<=140;i++){const q=i/140,a=q*Math.PI*2,r=R*.73;hp.push(new THREE.Vector3(r*Math.cos(a),r*Math.sin(a),-1+2*q))}const helix=tube(hp,0xffc857,.018,"pitch");
- H={hub,root:rootHi,tip:tipHi,upper,lower,leadCCW,trailCCW,chord,airfoil,twistGroup,sweep:[sweepCurve,radial],dihedral:[diCurve,plane,ring],plane:[plane,ring],duct,helix};
+ H={hub,root:rootHi,tip:tipHi,upper,lower,leadCCW,trailCCW,chord,airfoil,twist:twistGroup,twistGroup,sweep:[sweepCurve,radial],dihedral:[diCurve,plane,ring],plane:[plane,ring],duct,helix};
  buildExplosion();
 }
 function buildExplosion(){const p=subset(t=>t.cent.x>hubR*.45,baseMat,null,explodeGroup),n=subset(t=>t.cent.x<-hubR*.45,baseMat,null,explodeGroup),h=subset(t=>Math.abs(t.cent.x)<=hubR*.45,baseMat,null,explodeGroup);p.userData.target=new THREE.Vector3(.68,0,.34);n.userData.target=new THREE.Vector3(-.68,0,-.34);h.userData.target=new THREE.Vector3(0,0,-.72);for(const x of explodeGroup.children)x.visible=false}
