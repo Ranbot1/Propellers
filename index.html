@@ -1,462 +1,196 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#07111f" />
-  <title>螺旋桨 3D 基础概念交互教程</title>
-  <meta name="description" content="通过可旋转、可点击、可爆炸的三维螺旋桨模型理解弦、扭转、后掠、桨尖、涵道等实体概念。" />
-  <style>
-    :root {
-      --bg: #07111f;
-      --panel: rgba(10, 24, 41, .88);
-      --panel2: rgba(17, 35, 57, .72);
-      --line: rgba(165, 200, 230, .16);
-      --text: #edf6ff;
-      --muted: #9fb7ca;
-      --accent: #70d6ff;
-      --accent2: #ffc857;
-      --good: #8be28b;
-      --danger: #ff7d8a;
-      --shadow: 0 22px 55px rgba(0,0,0,.34);
-    }
-
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
-    body { overflow-x: hidden; }
-
-    .shell {
-      min-height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      background:
-        radial-gradient(circle at 68% 15%, rgba(60, 149, 210, .14), transparent 32%),
-        linear-gradient(180deg, #07111f 0%, #081521 100%);
-    }
-
-    header {
-      position: relative;
-      z-index: 20;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(14px);
-      background: rgba(5, 15, 27, .76);
-    }
-
-    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .brand-mark {
-      width: 38px; height: 38px; border-radius: 12px;
-      display: grid; place-items: center;
-      background: linear-gradient(135deg, rgba(112,214,255,.25), rgba(255,200,87,.13));
-      border: 1px solid rgba(112,214,255,.28);
-      font-size: 20px;
-      box-shadow: inset 0 0 22px rgba(112,214,255,.08);
-    }
-    h1 { margin: 0; font-size: clamp(18px, 2vw, 24px); letter-spacing: -.02em; }
-    .kicker { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-    .header-note { color: var(--muted); font-size: 12px; text-align: right; max-width: 420px; }
-
-    .workspace {
-      min-height: 0;
-      display: grid;
-      grid-template-columns: 270px minmax(0, 1fr) 330px;
-      gap: 0;
-    }
-
-    .sidebar, .info {
-      position: relative;
-      z-index: 10;
-      background: var(--panel);
-      backdrop-filter: blur(16px);
-      min-height: 0;
-      overflow: auto;
-    }
-    .sidebar { border-right: 1px solid var(--line); padding: 18px 14px 30px; }
-    .info { border-left: 1px solid var(--line); padding: 20px 20px 34px; }
-
-    .panel-title {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .12em;
-      margin: 4px 8px 12px;
-    }
-
-    .concept-list { display: grid; gap: 7px; }
-    .concept-btn {
-      width: 100%;
-      border: 1px solid transparent;
-      border-radius: 12px;
-      background: transparent;
-      color: var(--text);
-      text-align: left;
-      padding: 10px 11px;
-      cursor: pointer;
-      transition: .18s ease;
-    }
-    .concept-btn:hover { background: rgba(112,214,255,.07); border-color: rgba(112,214,255,.12); }
-    .concept-btn.active {
-      background: linear-gradient(90deg, rgba(112,214,255,.16), rgba(112,214,255,.05));
-      border-color: rgba(112,214,255,.28);
-      box-shadow: inset 3px 0 0 var(--accent);
-    }
-    .concept-btn .en { display: block; font-weight: 760; font-size: 13px; }
-    .concept-btn .zh { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
-    .concept-btn.active .zh { color: #cfeaff; }
-
-    .viewer {
-      position: relative;
-      min-width: 0;
-      min-height: 660px;
-      overflow: hidden;
-      background:
-        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-      background-size: 38px 38px;
-    }
-    #three { position: absolute; inset: 0; }
-    canvas { display: block; width: 100%; height: 100%; outline: none; }
-
-    .toolbar {
-      position: absolute;
-      left: 16px;
-      top: 16px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      z-index: 5;
-    }
-    .tool {
-      border: 1px solid rgba(188,220,245,.18);
-      background: rgba(7, 19, 33, .76);
-      color: var(--text);
-      padding: 9px 11px;
-      border-radius: 11px;
-      cursor: pointer;
-      font-size: 12px;
-      backdrop-filter: blur(10px);
-      transition: .18s ease;
-    }
-    .tool:hover { border-color: rgba(112,214,255,.42); background: rgba(15, 38, 61, .88); }
-    .tool.on { color: #07111f; background: var(--accent); border-color: var(--accent); font-weight: 800; }
-
-    .status {
-      position: absolute;
-      left: 16px;
-      bottom: 16px;
-      z-index: 5;
-      max-width: min(470px, calc(100% - 32px));
-      border: 1px solid rgba(188,220,245,.14);
-      border-radius: 14px;
-      background: rgba(7, 19, 33, .76);
-      backdrop-filter: blur(12px);
-      padding: 10px 12px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.55;
-      box-shadow: var(--shadow);
-    }
-    .status strong { color: var(--text); }
-
-    .tooltip {
-      position: fixed;
-      z-index: 100;
-      pointer-events: none;
-      transform: translate(14px, 14px);
-      background: rgba(5, 14, 25, .94);
-      border: 1px solid rgba(112,214,255,.26);
-      border-radius: 9px;
-      padding: 7px 9px;
-      color: var(--text);
-      font-size: 12px;
-      display: none;
-      box-shadow: var(--shadow);
-    }
-
-    .info .eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-    .info h2 { margin: 6px 0 3px; font-size: 24px; line-height: 1.12; }
-    .info .cn { color: var(--accent2); font-size: 15px; font-weight: 650; margin-bottom: 16px; }
-    .info p { color: #c7d9e8; line-height: 1.7; font-size: 13px; margin: 0 0 14px; }
-    .definition {
-      margin: 14px 0;
-      padding: 13px 14px;
-      border-radius: 13px;
-      border: 1px solid rgba(112,214,255,.18);
-      background: rgba(112,214,255,.055);
-      color: #e9f7ff;
-      font-size: 13px;
-      line-height: 1.65;
-    }
-    .equation {
-      margin: 14px 0;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.045);
-      border: 1px solid rgba(255,255,255,.08);
-      font-family: "SFMono-Regular", Consolas, monospace;
-      font-size: 13px;
-      color: #e8f5ff;
-      overflow-x: auto;
-    }
-    .bullets { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 9px; }
-    .bullets li {
-      position: relative;
-      padding-left: 18px;
-      color: #bfd0df;
-      font-size: 12px;
-      line-height: 1.55;
-    }
-    .bullets li::before { content: "•"; position: absolute; left: 2px; top: -1px; color: var(--accent2); font-size: 18px; }
-    .mini-card {
-      margin-top: 18px;
-      padding: 13px;
-      border-radius: 13px;
-      background: rgba(255,255,255,.035);
-      border: 1px solid rgba(255,255,255,.075);
-    }
-    .mini-card strong { font-size: 12px; }
-    .mini-card p { margin: 7px 0 0; font-size: 12px; color: var(--muted); }
-    .info a { color: var(--accent); text-decoration: none; }
-    .info a:hover { text-decoration: underline; }
-
-    .legend {
-      position: absolute;
-      right: 15px;
-      bottom: 15px;
-      z-index: 5;
-      display: flex;
-      gap: 9px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      max-width: 55%;
-    }
-    .legend span { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
-    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-    .dot.a { background: var(--accent); }
-    .dot.b { background: var(--accent2); }
-
-    @media (max-width: 1050px) {
-      .workspace { grid-template-columns: 220px minmax(0, 1fr); }
-      .info { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); max-height: none; }
-      .viewer { min-height: 610px; }
-    }
-    @media (max-width: 720px) {
-      header { align-items: flex-start; padding: 14px; }
-      .header-note { display: none; }
-      .workspace { display: block; }
-      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); padding: 12px; overflow-x: auto; }
-      .panel-title { display: none; }
-      .concept-list { display: flex; gap: 7px; min-width: max-content; }
-      .concept-btn { width: 145px; }
-      .viewer { min-height: 70vh; }
-      .info { border-top: 1px solid var(--line); padding: 20px 16px 30px; }
-      .legend { display: none; }
-    }
-  </style>
-
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOAR 9×7 螺旋桨 · 3D 基础概念</title>
+<meta name="description" content="基于用户提供 XOAR9x7 STL 的三维交互式螺旋桨基础概念教程。">
+<style>
+:root{--bg:#07111f;--panel:rgba(8,20,35,.92);--panel2:rgba(18,36,58,.72);--line:rgba(170,210,240,.14);--txt:#ecf7ff;--muted:#9fb6c9;--a:#6ed8ff;--b:#ffc85a;--red:#ff7183;--green:#83e1a8}
+*{box-sizing:border-box}html,body{margin:0;background:#07111f;color:var(--txt);font-family:Inter,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+body{min-height:100vh;background:radial-gradient(circle at 60% 10%,rgba(49,140,202,.14),transparent 32%),linear-gradient(#07111f,#081522)}
+header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);background:rgba(5,15,27,.82);backdrop-filter:blur(14px);position:relative;z-index:20}
+.brand{display:flex;align-items:center;gap:11px}.mark{width:38px;height:38px;border:1px solid rgba(110,216,255,.25);background:rgba(110,216,255,.08);border-radius:12px;display:grid;place-items:center}
+.kicker{font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:800;color:var(--a)}h1{font-size:20px;margin:2px 0 0}.headmeta{font-size:12px;color:var(--muted);text-align:right}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr) 340px;min-height:calc(100vh - 68px)}
+.side,.info{background:var(--panel);backdrop-filter:blur(14px);overflow:auto;position:relative;z-index:10}.side{border-right:1px solid var(--line);padding:15px 12px}.info{border-left:1px solid var(--line);padding:20px}
+.section{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:800;margin:7px 8px 10px}
+.btns{display:grid;gap:6px}.concept{border:1px solid transparent;background:transparent;color:var(--txt);border-radius:11px;padding:9px 10px;text-align:left;cursor:pointer}.concept:hover{background:rgba(110,216,255,.06)}.concept.active{border-color:rgba(110,216,255,.28);background:linear-gradient(90deg,rgba(110,216,255,.15),rgba(110,216,255,.035));box-shadow:inset 3px 0 var(--a)}
+.concept b{display:block;font-size:13px}.concept span{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.viewer{position:relative;min-height:680px;overflow:hidden;background:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:36px 36px}
+#three{position:absolute;inset:0}.toolbar{position:absolute;left:14px;top:14px;z-index:5;display:flex;gap:7px;flex-wrap:wrap}.tool{border:1px solid rgba(180,220,245,.18);background:rgba(6,18,32,.78);color:var(--txt);border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer;backdrop-filter:blur(10px)}.tool:hover{border-color:rgba(110,216,255,.45)}.tool.on{background:var(--a);color:#06111e;font-weight:800}
+.badge{position:absolute;left:14px;bottom:14px;z-index:5;max-width:580px;background:rgba(6,18,32,.82);border:1px solid rgba(180,220,245,.14);border-radius:12px;padding:9px 11px;color:var(--muted);font-size:12px;line-height:1.55;backdrop-filter:blur(10px)}.badge strong{color:var(--txt)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;z-index:8;background:rgba(7,17,31,.92);transition:.3s}.loading.hide{opacity:0;pointer-events:none}.loader{text-align:center;color:var(--muted)}.spinner{width:44px;height:44px;border:3px solid rgba(110,216,255,.15);border-top-color:var(--a);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 12px}@keyframes s{to{transform:rotate(360deg)}}
+.info .ey{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a)}.info h2{font-size:25px;margin:7px 0 3px}.cn{color:var(--b);font-weight:700;margin-bottom:14px}.def{background:rgba(110,216,255,.055);border:1px solid rgba(110,216,255,.17);border-radius:12px;padding:12px 13px;font-size:13px;line-height:1.65;margin-bottom:13px}.info p{color:#c3d6e5;font-size:13px;line-height:1.72}.eq{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);padding:10px 12px;border-radius:10px;font-size:12px;overflow:auto}
+ul{list-style:none;padding:0;margin:14px 0;display:grid;gap:8px}li{color:#b9ccdc;font-size:12px;line-height:1.55;padding-left:16px;position:relative}li:before{content:"•";position:absolute;left:2px;color:var(--b);font-size:16px}
+.card{margin-top:14px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.035);border-radius:12px;padding:11px 12px}.card strong{font-size:12px}.card p{margin:6px 0 0;font-size:11px;color:var(--muted)}a{color:var(--a);text-decoration:none}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}.stat div{background:rgba(255,255,255,.035);border-radius:9px;padding:8px}.stat b{font-size:12px;display:block}.stat span{font-size:10px;color:var(--muted)}
+.tooltip{position:fixed;z-index:100;display:none;pointer-events:none;background:rgba(4,13,24,.95);border:1px solid rgba(110,216,255,.25);border-radius:8px;padding:6px 8px;font-size:11px}
+@media(max-width:1050px){.layout{grid-template-columns:220px minmax(0,1fr)}.info{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}}
+@media(max-width:720px){header{height:auto;padding:12px}.headmeta{display:none}.layout{display:block}.side{border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}.btns{display:flex;min-width:max-content}.concept{width:142px}.viewer{min-height:68vh}.info{padding:17px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
-  <div class="shell">
-    <header>
-      <div class="brand">
-        <div class="brand-mark">✦</div>
-        <div>
-          <div class="kicker">Propeller Anatomy · Part 01</div>
-          <h1>螺旋桨基础概念 · XOAR9x7 实体交互教程</h1>
-        </div>
-      </div>
-      <div class="header-note">点击左侧术语或直接点击三维模型。拖动旋转 · 滚轮缩放 · 右键平移。当前主模型直接来自你上传的 XOAR9x7.stl；辅助线和涵道仅用于教学说明。</div>
-    </header>
-
-    <main class="workspace">
-      <aside class="sidebar">
-        <div class="panel-title">实体概念</div>
-        <div class="concept-list" id="conceptList"></div>
-      </aside>
-
-      <section class="viewer" id="viewer">
-        <div id="three"></div>
-        <div class="toolbar">
-          <button class="tool" id="resetView">重置视角</button>
-          <button class="tool" id="topView">俯视</button>
-          <button class="tool" id="sideView">侧视</button>
-          <button class="tool" id="explode">教学爆炸图</button>
-          <button class="tool" id="autoRotate">自动旋转</button>
-        </div>
-        <div class="status" id="status"><strong>开始：</strong>先点“Leading edge 前缘”，观察高亮线在真实桨叶上的位置。</div>
-        <div class="legend"><span><i class="dot a"></i>当前高亮</span><span><i class="dot b"></i>辅助几何</span></div>
-      </section>
-
-      <aside class="info">
-        <div class="eyebrow">Selected concept</div>
-        <h2 id="infoEn">Leading edge</h2>
-        <div class="cn" id="infoZh">前缘</div>
-        <div class="definition" id="infoDefinition"></div>
-        <p id="infoBody"></p>
-        <div class="equation" id="infoEquation"></div>
-        <ul class="bullets" id="infoBullets"></ul>
-        <div class="mini-card">
-          <strong>如何使用这张图</strong>
-          <p id="infoAction">拖动模型，从不同角度确认高亮部分到底是“线、面、截面还是整件”。</p>
-        </div>
-        <div class="mini-card">
-          <strong>推荐参考</strong>
-          <p><a href="https://www.nasa.gov/reference/openvsp-propellers/" target="_blank" rel="noreferrer">NASA OpenVSP · Propellers</a><br>
-          <a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/propeller-thrust/" target="_blank" rel="noreferrer">NASA Glenn · Propeller Thrust</a><br>
-          <a href="https://archive.aoe.vt.edu/mason/Mason_f/DuctedFans.pdf" target="_blank" rel="noreferrer">Virginia Tech · Ducted Fans</a></p>
-        </div>
-      </aside>
-    </main>
+<header>
+  <div class="brand"><div class="mark">✦</div><div><div class="kicker">Real STL · Propeller Anatomy</div><h1>XOAR 9×7 螺旋桨 · 三维基础概念</h1></div></div>
+  <div class="headmeta">模型来源：你上传的 XOAR9x7.stl<br>网页显示版由原 STL 直接网格优化，不再使用程序生成假桨</div>
+</header>
+<main class="layout">
+<aside class="side">
+  <div class="section">点击术语 → 模型高亮</div>
+  <div class="btns" id="concepts"></div>
+</aside>
+<section class="viewer" id="viewer">
+  <div id="three"></div>
+  <div class="loading" id="loading"><div class="loader"><div class="spinner"></div><b>正在加载 XOAR 真实 STL 几何</b><br><span>解压网格并计算教学辅助几何…</span></div></div>
+  <div class="toolbar">
+    <button class="tool" id="home">默认视角</button>
+    <button class="tool" id="top">俯视</button>
+    <button class="tool" id="side">侧视</button>
+    <button class="tool" id="explode">爆炸图</button>
+    <button class="tool" id="wire">线框</button>
+    <button class="tool" id="spin">自动旋转</button>
   </div>
+  <div class="badge" id="badge"><strong>真实模型：</strong>225 × 49.1 × 12.6 mm。点击“Leading edge 前缘”开始。</div>
+</section>
+<aside class="info">
+  <div class="ey">Selected concept</div>
+  <h2 id="en">Leading edge</h2><div class="cn" id="zh">前缘</div>
+  <div class="def" id="def"></div><p id="body"></p><div class="eq" id="eq"></div><ul id="bullets"></ul>
+  <div class="card"><strong>真实模型说明</strong><p>源文件约 58,102 个三角面。网页默认载入由该 STL 直接生成的 3,397 面轻量版本，并使用平滑法线显示；轮廓、扭转、桨距形态、根部和桨尖均来自你的模型，而不是重新造型。</p><div class="stat"><div><b>225 mm</b><span>直径约</span></div><div><b>49.1 mm</b><span>最大弦向宽度</span></div><div><b>12.6 mm</b><span>轴向厚度范围</span></div><div><b>XOAR 9×7</b><span>上传模型</span></div></div></div>
+  <div class="card"><strong>旋向约定</strong><p>前缘/后缘按“从 +Z 方向看为逆时针旋转（CCW）”进行教学标注。若实际安装旋向相反，前缘与后缘身份会交换。</p></div>
+</aside>
+</main>
+<div class="tooltip" id="tip"></div>
 
-  <div class="tooltip" id="tooltip"></div>
-
-  <script type="module">
-
+<script type="module">
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 
-const concepts=[
-{id:"blade",en:"Blade",zh:"桨叶",def:"从桨毂向外延伸、与空气交换动量的旋转翼面。",body:"屏幕上的桨叶现在直接来自你上传的 XOAR9x7.stl，而不是程序生成的示意叶片。把它理解成很多翼型截面沿半径连续排列，是理解弦长、扭转、后掠的核心。",eq:"3D blade ≈ airfoil sections distributed along r",bullets:["真实 STL 是一整副双叶桨的封闭实体。","网页仅做轻量化网格重采样以提高在线加载速度。","原 STL：约 225 × 49 × 12.6 mm，58,102 个三角面。"]},
-{id:"hub",en:"Hub",zh:"桨毂",def:"螺旋桨中心与电机轴连接、传递扭矩的实体区域。",body:"页面按真实 STL 的径向位置把中心区域从同一个网格中分离高亮。",eq:"motor torque → hub → blade",bullets:["桨毂和桨根不是同一个概念。","爆炸图中的分件是教学切分，不表示原 STL 真能拆开。"]},
-{id:"root",en:"Root",zh:"桨根",def:"桨叶靠近桨毂的过渡区域。",body:"桨根局部圆周速度较低，但承担很大的结构弯矩。蓝黄色高亮来自 XOAR9x7 网格本身。",eq:"V_t = ωr",bullets:["r 越小，局部圆周速度越低。","结构强度设计在桨根尤其重要。"]},
-{id:"tip",en:"Tip",zh:"桨尖",def:"桨叶半径最外端，通常也是局部圆周速度最高的区域。",body:"桨尖是无人机气动噪声控制的重点区域。压力面气流绕向吸力面会形成桨尖涡。",eq:"V_tip ≈ ωR",bullets:["后掠、收窄、上反/下反经常集中在外段。","tip vortex 与桨尖噪声高度相关。"]},
-{id:"leading",en:"Leading edge",zh:"前缘",def:"在给定旋转方向下，翼型最先迎向切向来流的边。",body:"蓝色边缘曲线由 XOAR9x7 STL 的外轮廓按径向站位直接采样。前缘依赖旋向；上方可以切换 CCW / CW。",eq:"rotation direction determines which geometric edge meets flow first",bullets:["默认按 CCW 标注。","如果这副桨实际规定为另一旋向，切换旋向即可。"]},
-{id:"trailing",en:"Trailing edge",zh:"后缘",def:"气流经过翼型后离开的边。",body:"后缘也从真实 STL 外轮廓提取。湍流边界层经过后缘散射，是宽带噪声的重要来源之一。",eq:"boundary-layer turbulence + trailing edge → broadband noise",bullets:["后缘通常比前缘更薄。","Trailing edge 与 Sweep 后掠完全不是一回事。"]},
-{id:"chord",en:"Chord / chord length",zh:"弦 / 弦长 c",def:"某个径向截面上，连接前缘与后缘的参考直线；其长度就是弦长。",body:"黄色线跨过 XOAR9x7 约 0.70R 处的真实叶片宽度。弦并不是实体中存在的一根杆。",eq:"c = |LE − TE|,  c = c(r)",bullets:["弦长就是这一截叶片有多宽。","不同 r/R 的弦长通常不同。"]},
-{id:"airfoil",en:"Airfoil section",zh:"翼型截面",def:"用近似垂直于展向的平面切开桨叶得到的二维轮廓。",body:"这里不是画一个假的 NACA 翼型，而是直接让切平面与 XOAR9x7 三角网格求交，显示真实截面。",eq:"section = STL mesh ∩ cutting plane",bullets:["截面包含前缘、后缘、厚度和弦线。","CAD Loft/放样本质上就是把很多这种截面连接起来。"]},
-{id:"twist",en:"Twist",zh:"扭转",def:"不同半径位置的翼型截面具有不同几何安装角。",body:"页面会同时从真实 STL 切出多个截面。斜着看时，你可以直接比较它们的倾角变化。",eq:"θ = θ(r)",bullets:["扭转用于适应 V_t = ωr 带来的局部速度差。","Twist 和名义 Pitch 有联系，但不是同一个量。"]},
-{id:"pitch",en:"Pitch",zh:"桨距",def:"把螺旋桨想成螺丝时，每转一圈对应的理论轴向前进距离。",body:"黄色螺旋线只负责解释实体概念。仅凭 STL 并不能在不规定定义与工作状态的情况下唯一得到厂家名义桨距。",eq:"P ≈ 2πr · tan(β)  (local geometric view)",bullets:["固定桨距桨仍然具有沿半径的扭转。","实际前进距离会受滑移和工况影响。"]},
-{id:"sweep",en:"Sweep",zh:"后掠",def:"从转轴方向俯视，桨叶参考线在旋转平面内偏离纯径向直线。",body:"蓝色曲线由 XOAR9x7 各径向站位前后缘中点构成；黄色直线是没有后掠的纯径向参考。",eq:"sweep = in-plane offset of stacking line",bullets:["切到“俯视”最容易理解。","后掠与扭转是不同的空间自由度。"]},
-{id:"dihedral",en:"Dihedral / Anhedral",zh:"上反 / 下反",def:"桨叶相对旋转平面向轴向方向偏移，是平面外弯曲。",body:"透明圆盘是旋转平面，蓝色真实中线显示 XOAR9x7 外段是否明显离开该平面。这副模型并没有极端夸张的三维弯桨尖。",eq:"out-of-plane offset relative to rotor plane",bullets:["用“侧视”最直观。","不要与俯视图里的 Sweep 混淆。"]},
-{id:"plane",en:"Rotation plane",zh:"旋转平面",def:"垂直于转轴、作为旋翼几何参照的基准平面。",body:"透明蓝色圆盘表示旋转平面。后掠发生在平面内；上反/下反则离开平面。",eq:"rotor axis ⟂ rotation plane",bullets:["由于扭转，真实叶片表面不会完全落在这个平面上。"]},
-{id:"surfaces",en:"Pressure / suction surface",zh:"压力面 / 吸力面",def:"翼型两侧的主要表面；工作时两侧压力差产生气动力。",body:"页面按三角面法向的轴向分量把 STL 两侧分别染色。真正的压力面/吸力面还要结合这副桨的安装方向、旋向和工况确认。",eq:"Δp across blade surfaces → aerodynamic loading",bullets:["桨尖处两侧压差会驱动绕流形成 tip vortex。","做 CFD 前应先确认真实旋向和正反面。"]},
-{id:"duct",en:"Duct / shroud",zh:"涵道 / 外罩",def:"包围螺旋桨外缘的环形气动结构，不属于桨叶本体。",body:"XOAR9x7.stl 本身是开放桨，没有涵道。这里出现的透明环是额外教学叠加，让你直观看懂涵道到底是什么实体。",eq:"open propeller + annular shroud → ducted fan",bullets:["涵道改变桨尖附近流动及 rotor–duct interaction。","涵道不意味着所有工况下一定更安静。"]}
+const data=[
+{id:"blade",en:"Blade",zh:"桨叶",def:"从桨毂向外延伸、与空气交换动量并产生推力的旋转翼面。",body:"真实螺旋桨不是平板。它可以理解为许多不同半径位置的翼型截面，按照各自弦长、扭转角和空间位置连续连接形成。",eq:"3D blade ≈ loft{ airfoil(r), c(r), θ(r) }",bul:["你看到的是从你上传 STL 直接得到的 XOAR 桨叶。","两侧桨叶通过中心桨毂连接。","后面的弦、扭转、前缘、后缘都属于桨叶几何。"]},
+{id:"hub",en:"Hub",zh:"桨毂",def:"位于旋转中心、与电机轴连接并向桨叶传递扭矩的中心实体。",body:"桨毂主要承担连接与传力任务。它和桨根相邻，但两者不是同一个概念。",eq:"motor torque → hub → blade",bul:["爆炸图会把桨毂和左右两片桨叶教学性分开。","桨毂附近半径小，因此圆周速度低。"]},
+{id:"root",en:"Root",zh:"桨根",def:"桨叶紧邻桨毂的内侧区域，是气动叶片向中心结构过渡的位置。",body:"桨根通常较厚、受弯矩较大，几何会兼顾结构强度；因为半径较小，它的局部圆周速度低于外段。",eq:"V_t = ωr",bul:["r 越小，圆周速度越低。","桨根 ≠ 桨毂：前者仍属于叶片。"]},
+{id:"tip",en:"Tip",zh:"桨尖",def:"桨叶最外端、半径接近 R 的区域。",body:"桨尖局部速度最高，也是桨尖涡和高频噪声研究的关键位置。很多低噪设计都会针对这里做收窄、后掠或三维弯曲。",eq:"V_tip ≈ ωR",bul:["桨尖两侧压力会发生绕流，形成 tip vortex。","大疆近年的低噪专利重点之一就是桨尖卸载。"]},
+{id:"leading",en:"Leading edge",zh:"前缘",def:"在给定旋转方向下，翼型截面最先迎接相对来流的那条空间边。",body:"这里按从 +Z 方向看逆时针旋转来标注。对右侧桨叶，运动方向大致朝 +Y，所以 +Y 一侧外轮廓被标为前缘；左侧桨叶相反。",eq:"relative flow → leading edge → airfoil → trailing edge",bul:["蓝色曲线来自真实 XOAR 网格外轮廓采样。","旋向相反时，前缘与后缘身份交换。"]},
+{id:"trailing",en:"Trailing edge",zh:"后缘",def:"气流经过翼型后离开桨叶的细边。",body:"后缘湍流散射是宽带噪声的重要来源之一。这里用红色空间曲线在真实桨叶上标出。",eq:"turbulent boundary layer + trailing edge → broadband noise",bul:["后缘不要和后掠 sweep 混淆。","后缘通常比前缘尖薄。"]},
+{id:"chord",en:"Chord / chord length",zh:"弦 / 弦长 c",def:"某一半径截面上，从前缘到后缘连接的参考直线；长度就是弦长。",body:"弦不是实体零件，而是一条几何参考线。黄色线取自这副 XOAR 桨大约 70% 半径处的真实截面。",eq:"c(r) = |LE(r) − TE(r)|",bul:["不同 r/R 位置的弦长可以不同。","CAD 重建时常把 c(r) 作为最核心输入之一。"]},
+{id:"airfoil",en:"Airfoil section",zh:"翼型截面",def:"在某个半径位置，用一个近似垂直于展向的平面切开桨叶得到的截面。",body:"黄色闭合线不是我画的假翼型，而是网页实时让平面与 XOAR 三角网格相交得到的截线。",eq:"section(r) = blade ∩ plane(r)",bul:["截面里可以看前缘、后缘、弦、厚度和弯度。","三维桨叶可视作许多这样的截面连续放样。"]},
+{id:"twist",en:"Twist",zh:"扭转",def:"不同半径位置的翼型截面具有不同几何安装角。",body:"网页同时切出四个真实截面，你会看到截面角度从内段到外段发生变化。这就是肉眼能看到的“桨叶被拧过”。",eq:"θ = θ(r)；常见趋势：θ_root > θ_tip",bul:["原因之一是 V_t=ωr，外段线速度更高。","扭转 twist 与名义桨距 pitch 有联系，但并不等价。"]},
+{id:"pitch",en:"Pitch",zh:"桨距",def:"把螺旋桨想成螺丝时，理论上旋转一整圈所对应的轴向前进距离。",body:"黄色螺旋线只用于解释几何意义。XOAR 9×7 名称中的“7”通常表示约 7 英寸名义桨距。实际前进距离会受滑移和工况影响。",eq:"P ≈ 2πr·tan(β)  （局部几何关系）",bul:["固定桨距桨仍然具有径向扭转。","桨距不是桨叶某一处的单一角度。"]},
+{id:"sweep",en:"Sweep",zh:"后掠 / 平面内偏移",def:"从旋转轴方向俯视时，桨叶参考线相对纯径向直线的平面内偏移。",body:"蓝色线是根据 XOAR 各径向截面中心估计出的真实积叠走势；黄色线是纯径向参考。两者差异就是平面内的 sweep/skew 直观概念。",eq:"sweep = in-plane offset from radial reference",bul:["俯视最容易理解。","它与扭转、弦长、上反/下反是不同设计变量。"]},
+{id:"dihedral",en:"Dihedral / Anhedral",zh:"上反 / 下反",def:"桨叶相对旋转平面沿轴向产生的平面外弯曲。",body:"侧视时看截面中心线是否离开 z=0 的理想旋转平面。如果外段向一侧翘起，就是上反/下反类三维几何。",eq:"out-of-plane offset = z(r) − z_plane",bul:["后掠发生在旋转平面内；上反/下反发生在平面外。","大疆最新低噪专利会组合这类三维桨尖几何。"]},
+{id:"plane",en:"Rotation plane",zh:"旋转平面",def:"与电机转轴垂直、用于描述旋翼旋转的基准平面。",body:"蓝色半透明圆盘就是 z=0 基准旋转平面。很多三维几何术语都要以它为参照。",eq:"rotor axis ⟂ rotation plane",bul:["sweep 在平面内看。","dihedral/anhedral 相对这个平面向外偏。"]},
+{id:"surfaces",en:"Pressure / suction surface",zh:"压力面 / 吸力面",def:"桨叶两侧主要表面；工作时两侧形成压力差并贡献气动力。",body:"这里依据网格三角形法向的轴向分量将两侧表面用蓝/黄区分。它是教学可视化，不代替具体工况 CFD 的压力场。",eq:"Δp across blade surface → aerodynamic force",bul:["真实压力面/吸力面定义与旋向、来流、安装角有关。","桨尖处两侧压力绕流形成 tip vortex。"]},
+{id:"duct",en:"Duct / shroud",zh:"涵道 / 外罩",def:"围绕螺旋桨外缘设置的环形气动结构，它不是桨叶自身的一部分。",body:"选择后网页会在 XOAR 开放桨周围加一个透明环，仅用于说明什么叫涵道。原始 XOAR STL 本身没有涵道。",eq:"open propeller + annular shroud → ducted fan",bul:["涵道会显著改变桨尖附近流场。","并不是所有工况下“有涵道就一定更安静”。"]}
 ];
-const conceptMap=Object.fromEntries(concepts.map(c=>[c.id,c]));
-const list=document.getElementById("conceptList");
-list.innerHTML="";
-for(const c of concepts){const b=document.createElement("button");b.className="concept-btn";b.dataset.id=c.id;b.innerHTML='<span class="en">'+c.en+'</span><span class="zh">'+c.zh+'</span>';b.onclick=()=>selectConcept(c.id,true);list.appendChild(b)}
-const infoEn=document.getElementById("infoEn"),infoZh=document.getElementById("infoZh"),infoDefinition=document.getElementById("infoDefinition"),infoBody=document.getElementById("infoBody"),infoEquation=document.getElementById("infoEquation"),infoBullets=document.getElementById("infoBullets"),infoAction=document.getElementById("infoAction"),status=document.getElementById("status"),tooltip=document.getElementById("tooltip");
+const map=Object.fromEntries(data.map(x=>[x.id,x]));
+const list=document.getElementById("concepts");
+for(const c of data){const b=document.createElement("button");b.className="concept";b.dataset.id=c.id;b.innerHTML="<b>"+c.en+"</b><span>"+c.zh+"</span>";b.onclick=()=>select(c.id,true);list.appendChild(b)}
+const en=document.getElementById("en"),zh=document.getElementById("zh"),def=document.getElementById("def"),body=document.getElementById("body"),eq=document.getElementById("eq"),bullets=document.getElementById("bullets"),badge=document.getElementById("badge"),loading=document.getElementById("loading"),tip=document.getElementById("tip");
+
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x07111f,.035);
+const camera=new THREE.PerspectiveCamera(40,1,.01,100);camera.position.set(4.9,-6.6,4.3);
 const holder=document.getElementById("three");
-status.innerHTML="<strong>正在加载：</strong>XOAR9x7.stl 的网页优化网格……";
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;holder.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);controls.minDistance=2.4;controls.maxDistance=14;controls.autoRotateSpeed=.8;
+scene.add(new THREE.HemisphereLight(0xc9edff,0x102235,1.35));const dl=new THREE.DirectionalLight(0xffffff,2.3);dl.position.set(4,-4,6);scene.add(dl);const fl=new THREE.DirectionalLight(0x6ed8ff,1.1);fl.position.set(-5,3,1);scene.add(fl);
+const grid=new THREE.GridHelper(11,22,0x23425d,0x152d42);grid.rotation.x=Math.PI/2;grid.position.z=-1.1;grid.material.transparent=true;grid.material.opacity=.28;scene.add(grid);
 
-const toolbar=document.querySelector(".toolbar");
-const dirBtn=document.createElement("button");dirBtn.className="tool";dirBtn.id="rotationDir";dirBtn.textContent="旋向 CCW";toolbar.appendChild(dirBtn);
-
-const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x07111f,.034);
-const camera=new THREE.PerspectiveCamera(40,1,.05,80);camera.position.set(5.2,-6.4,4.2);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;holder.appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.07;controls.target.set(0,0,0);controls.minDistance=3.5;controls.maxDistance=16;controls.autoRotateSpeed=.85;
-scene.add(new THREE.HemisphereLight(0xd2f0ff,0x0b1724,1.5));
-const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(4,-5,7);scene.add(key);
-const fill=new THREE.DirectionalLight(0x62d4ff,1.45);fill.position.set(-5,4,3);scene.add(fill);
-const rim=new THREE.PointLight(0xffc857,18,18);rim.position.set(0,4,-2);scene.add(rim);
-const grid=new THREE.GridHelper(12,24,0x20415d,0x153047);grid.rotation.x=Math.PI/2;grid.position.z=-1.25;grid.material.transparent=true;grid.material.opacity=.23;scene.add(grid);
-
-const rotor=new THREE.Group();scene.add(rotor);
-const helperGroup=new THREE.Group(),overlayGroup=new THREE.Group(),explodeGroup=new THREE.Group();rotor.add(helperGroup,overlayGroup,explodeGroup);
+const SCALE=36;
+const group=new THREE.Group();group.scale.setScalar(SCALE);scene.add(group);
+const helperGroup=new THREE.Group();group.add(helperGroup);
+let wholeMesh,baseGeometry,faces,verts,explode=false,wire=false;
+const helperSets={};
 const pickables=[];
-let pos,indexArray,fullMesh,baseGeo,R=3.2,hubR=.43,rootEnd=1.02,tipStart=2.75,rotationDir=1,activeConcept="blade",exploded=false,auto=false;
-const baseMat=new THREE.MeshPhysicalMaterial({color:0xa3b8c7,metalness:.12,roughness:.27,clearcoat:.5,clearcoatRoughness:.18,side:THREE.DoubleSide});
-const hiMat=new THREE.MeshStandardMaterial({color:0x62d4ff,emissive:0x62d4ff,emissiveIntensity:.3,roughness:.3,transparent:true,opacity:.76,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
-const hotMat=hiMat.clone();hotMat.color.set(0xffc857);hotMat.emissive.set(0xffc857);
-let H={};
 
+function base64ToBytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
+async function ungzip(u){const ds=new DecompressionStream("gzip");const ab=await new Response(new Blob([u]).stream().pipeThrough(ds)).arrayBuffer();return ab}
 async function loadMesh(){
- const r=await fetch("assets/XOAR9x7_web.qmesh.b64",{cache:"force-cache"});if(!r.ok)throw new Error("mesh asset HTTP "+r.status);
- const txt=(await r.text()).trim();const gz=Uint8Array.from(atob(txt),x=>x.charCodeAt(0));
- if(!("DecompressionStream" in window))throw new Error("浏览器不支持 gzip DecompressionStream");
- const ab=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
- const dv=new DataView(ab);if(String.fromCharCode(...new Uint8Array(ab,0,4))!=="PRP1")throw new Error("mesh format error");
- const nv=dv.getUint32(4,true),nf=dv.getUint32(8,true);let o=12;
- const mn=[dv.getFloat32(o,true),dv.getFloat32(o+4,true),dv.getFloat32(o+8,true)];o+=12;
- const mx=[dv.getFloat32(o,true),dv.getFloat32(o+4,true),dv.getFloat32(o+8,true)];o+=12;
- const q=new Uint16Array(ab,o,nv*3);o+=nv*3*2;indexArray=new Uint16Array(ab,o,nf*3);
- const raw=new Float32Array(nv*3);let maxr=0;
- for(let i=0;i<nv;i++){const x=mn[0]+q[i*3]/65535*(mx[0]-mn[0]),y=mn[1]+q[i*3+1]/65535*(mx[1]-mn[1]),z=mn[2]+q[i*3+2]/65535*(mx[2]-mn[2]);raw[i*3]=x;raw[i*3+1]=y;raw[i*3+2]=z;maxr=Math.max(maxr,Math.hypot(x,y))}
- let zsum=0,zn=0;for(let i=0;i<nv;i++){if(Math.hypot(raw[i*3],raw[i*3+1])<maxr*.13){zsum+=raw[i*3+2];zn++}}
- const z0=zn?zsum/zn:0,scale=3.2/maxr;R=3.2;hubR=.135*R;rootEnd=.32*R;tipStart=.86*R;
- pos=new Float32Array(nv*3);for(let i=0;i<nv;i++){pos[i*3]=raw[i*3]*scale;pos[i*3+1]=raw[i*3+1]*scale;pos[i*3+2]=(raw[i*3+2]-z0)*scale}
- baseGeo=new THREE.BufferGeometry();baseGeo.setAttribute("position",new THREE.BufferAttribute(pos,3));baseGeo.setIndex(new THREE.BufferAttribute(indexArray,1));baseGeo.computeVertexNormals();baseGeo.computeBoundingSphere();
- fullMesh=new THREE.Mesh(baseGeo,baseMat);rotor.add(fullMesh);pickables.push(fullMesh);
- buildFeatures();
- status.innerHTML="<strong>XOAR9x7 已加载：</strong>"+nv.toLocaleString()+" vertices · "+nf.toLocaleString()+" triangles（网页优化网格）";
- selectConcept("blade",false);
+ const files=Array.from({length:13},(_,i)=>"assets/xoar9x7/"+String(i).padStart(3,"0")+".b64");
+ const texts=await Promise.all(files.map(x=>fetch(x).then(r=>{if(!r.ok)throw new Error(x+" "+r.status);return r.text()})));
+ const raw=await ungzip(base64ToBytes(texts.join("")));
+ const dv=new DataView(raw);const nv=dv.getUint32(0,true),nf=dv.getUint32(4,true);
+ const pos=new Float32Array(raw,8,nv*3);const idx=new Uint16Array(raw,8+nv*12,nf*3);
+ verts=pos;faces=idx;
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setIndex(new THREE.BufferAttribute(idx,1));g.computeVertexNormals();baseGeometry=g;
+ const mat=new THREE.MeshStandardMaterial({color:0x9db5c8,roughness:.35,metalness:.12,side:THREE.DoubleSide});
+ wholeMesh=new THREE.Mesh(g,mat);wholeMesh.userData.kind="whole";group.add(wholeMesh);pickables.push(wholeMesh);
+ buildHelpers();loading.classList.add("hide");select("leading",false);
 }
-const P=i=>new THREE.Vector3(pos[i*3],pos[i*3+1],pos[i*3+2]);
-function tri(f){const a=indexArray[f*3],b=indexArray[f*3+1],c=indexArray[f*3+2],A=P(a),B=P(b),C=P(c),cent=A.clone().add(B).add(C).multiplyScalar(1/3),n=B.clone().sub(A).cross(C.clone().sub(A)).normalize();return{a,b,c,A,B,C,cent,n}}
-function subset(pred,mat=hiMat,concept=null,parent=overlayGroup){const ids=[];for(let f=0;f<indexArray.length/3;f++){const t=tri(f);if(pred(t))ids.push(t.a,t.b,t.c)}const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setIndex(ids);g.computeVertexNormals();const m=new THREE.Mesh(g,mat.clone());m.visible=false;m.renderOrder=5;if(concept)m.userData.concept=concept;parent.add(m);pickables.push(m);return m}
-function tube(points,color=0x62d4ff,r=.022,concept=null){if(points.length<2)return null;const g=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),Math.max(24,points.length*3),r,8,false);const m=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.25,roughness:.28});const x=new THREE.Mesh(g,m);x.visible=false;x.renderOrder=8;if(concept)x.userData.concept=concept;helperGroup.add(x);pickables.push(x);return x}
-function extrema(sign,n=30){const a=[],b=[],mid=[];for(let s=0;s<n;s++){const rt=R*(.22+.75*s/(n-1)),w=R*.018;let ai=-1,bi=-1,as=-1e9,bs=1e9;for(let i=0;i<pos.length/3;i++){const x=pos[i*3],y=pos[i*3+1];if((x>=0?1:-1)!==sign)continue;const rr=Math.hypot(x,y);if(Math.abs(rr-rt)>w)continue;const sc=sign*y;if(sc>as){as=sc;ai=i}if(sc<bs){bs=sc;bi=i}}if(ai>=0&&bi>=0){const A=P(ai),B=P(bi);a.push(A);b.push(B);mid.push(A.clone().add(B).multiplyScalar(.5))}}return{a,b,mid}}
-function section(x0,color=0xffc857){const pts=[],eps=1e-6;const cross=(A,B)=>{const da=A.x-x0,db=B.x-x0;if(da*db>0||Math.abs(B.x-A.x)<eps)return null;const t=(x0-A.x)/(B.x-A.x);return t>=-eps&&t<=1+eps?A.clone().lerp(B,t):null};for(let f=0;f<indexArray.length/3;f++){const{A,B,C}=tri(f);if(Math.max(A.x,B.x,C.x)<x0||Math.min(A.x,B.x,C.x)>x0)continue;const arr=[cross(A,B),cross(B,C),cross(C,A)].filter(Boolean),u=[];for(const p of arr)if(!u.some(q=>q.distanceToSquared(p)<1e-8))u.push(p);if(u.length>=2)pts.push(u[0],u[1])}const g=new THREE.BufferGeometry().setFromPoints(pts),l=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.98}));l.visible=false;l.renderOrder=9;helperGroup.add(l);return l}
-function buildFeatures(){
- const hub=subset(t=>Math.hypot(t.cent.x,t.cent.y)<hubR,hotMat,"hub");
- const rootHi=subset(t=>{const r=Math.hypot(t.cent.x,t.cent.y);return r>=hubR&&r<rootEnd},hotMat,"root");
- const tipHi=subset(t=>Math.hypot(t.cent.x,t.cent.y)>tipStart,hotMat,"tip");
- const upper=subset(t=>Math.hypot(t.cent.x,t.cent.y)>hubR&&t.n.z>=0,hiMat,"surfaces");
- const lower=subset(t=>Math.hypot(t.cent.x,t.cent.y)>hubR&&t.n.z<0,hotMat,"surfaces");
- const ep=extrema(1),en=extrema(-1);
- const leadCCW=[tube(ep.a,0x62d4ff,.023,"leading"),tube(en.a,0x62d4ff,.023,"leading")];
- const trailCCW=[tube(ep.b,0xff7b86,.020,"trailing"),tube(en.b,0xff7b86,.020,"trailing")];
- const ci=Math.floor(ep.a.length*.64),chord=tube([ep.a[ci],ep.b[ci]],0xffc857,.023,"chord");
- const airfoil=section(ep.mid[ci].x,0xffc857);
- const twistGroup=new THREE.Group();helperGroup.add(twistGroup);for(const f of [.38,.55,.70,.84]){const l=section(R*f,0xffc857);helperGroup.remove(l);l.visible=true;twistGroup.add(l)}twistGroup.visible=false;
- const sweepCurve=tube(ep.mid,0x62d4ff,.018),radial=tube([new THREE.Vector3(R*.2,0,0),new THREE.Vector3(R*.99,0,0)],0xffc857,.014);
- const plane=new THREE.Mesh(new THREE.CircleGeometry(R*1.045,96),new THREE.MeshBasicMaterial({color:0x62d4ff,transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false}));plane.visible=false;helperGroup.add(plane);
- const ring=new THREE.Mesh(new THREE.RingGeometry(R*1.025,R*1.035,128),new THREE.MeshBasicMaterial({color:0x62d4ff,transparent:true,opacity:.45,side:THREE.DoubleSide,depthWrite:false}));ring.visible=false;helperGroup.add(ring);
- const diCurve=tube(ep.mid,0x62d4ff,.018);
- const duct=new THREE.Group(),wall=new THREE.Mesh(new THREE.CylinderGeometry(R*1.075,R*1.075,.62,128,1,true),new THREE.MeshPhysicalMaterial({color:0x62d4ff,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false,roughness:.25}));wall.rotation.x=Math.PI/2;const ta=new THREE.Mesh(new THREE.TorusGeometry(R*1.075,.10,16,128),new THREE.MeshStandardMaterial({color:0x62d4ff,transparent:true,opacity:.65}));ta.position.z=.31;const tb=ta.clone();tb.position.z=-.31;duct.add(wall,ta,tb);duct.visible=false;helperGroup.add(duct);for(const x of [wall,ta,tb]){x.userData.concept="duct";pickables.push(x)}
- const hp=[];for(let i=0;i<=140;i++){const q=i/140,a=q*Math.PI*2,r=R*.73;hp.push(new THREE.Vector3(r*Math.cos(a),r*Math.sin(a),-1+2*q))}const helix=tube(hp,0xffc857,.018,"pitch");
- H={hub,root:rootHi,tip:tipHi,upper,lower,leadCCW,trailCCW,chord,airfoil,twist:twistGroup,twistGroup,sweep:[sweepCurve,radial],dihedral:[diCurve,plane,ring],plane:[plane,ring],duct,helix};
- buildExplosion();
+function v3(i){return new THREE.Vector3(verts[i*3],verts[i*3+1],verts[i*3+2])}
+function subset(test,color=0x6ed8ff,opacity=.86){
+ const p=[];for(let i=0;i<faces.length;i+=3){const a=v3(faces[i]),b=v3(faces[i+1]),c=v3(faces[i+2]);const ctr=a.clone().add(b).add(c).multiplyScalar(1/3);if(test(ctr,a,b,c))p.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z)}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));g.computeVertexNormals();
+ return new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.08,roughness:.38,metalness:.05,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:opacity>.5}));
 }
-function buildExplosion(){const p=subset(t=>t.cent.x>hubR*.45,baseMat,null,explodeGroup),n=subset(t=>t.cent.x<-hubR*.45,baseMat,null,explodeGroup),h=subset(t=>Math.abs(t.cent.x)<=hubR*.45,baseMat,null,explodeGroup);p.userData.target=new THREE.Vector3(.68,0,.34);n.userData.target=new THREE.Vector3(-.68,0,-.34);h.userData.target=new THREE.Vector3(0,0,-.72);for(const x of explodeGroup.children)x.visible=false}
-function hideAll(){for(const x of overlayGroup.children)x.visible=false;for(const x of helperGroup.children)x.visible=false;if(H.twistGroup)H.twistGroup.visible=false;if(fullMesh){fullMesh.material.color.set(0xa3b8c7);fullMesh.material.emissive.set(0);fullMesh.material.emissiveIntensity=0}}
-function show(x){if(Array.isArray(x))x.forEach(show);else if(x)x.visible=true}
-function showEdge(arr,color){for(const x of arr){x.material.color.set(color);x.material.emissive.set(color);x.visible=true}}
-function selectConcept(id,assist=false){if(!conceptMap[id]||!baseGeo||exploded)return;activeConcept=id;hideAll();document.querySelectorAll(".concept-btn").forEach(b=>b.classList.toggle("active",b.dataset.id===id));const d=conceptMap[id];infoEn.textContent=d.en;infoZh.textContent=d.zh;infoDefinition.textContent=d.def;infoBody.textContent=d.body;infoEquation.textContent=d.eq;infoBullets.innerHTML=d.bullets.map(x=>"<li>"+x+"</li>").join("");
- if(id==="blade"){fullMesh.material.color.set(0x62d4ff);fullMesh.material.emissive.set(0x62d4ff);fullMesh.material.emissiveIntensity=.07}
- else if(id==="leading")showEdge(rotationDir===1?H.leadCCW:H.trailCCW,0x62d4ff);
- else if(id==="trailing")showEdge(rotationDir===1?H.trailCCW:H.leadCCW,0xff7b86);
- else if(id==="surfaces")show([H.upper,H.lower]);
- else if(id==="pitch")show(H.helix);
- else show(H[id]);
- infoAction.textContent=id==="airfoil"?"截面由切平面与 XOAR9x7 网格逐三角求交得到。":id==="leading"||id==="trailing"?"边缘曲线从 STL 外轮廓按径向采样，并随 CCW/CW 旋向互换。":id==="sweep"?"蓝线是 STL 前后缘中点的真实趋势；黄线是纯径向参考。":id==="duct"?"涵道不在原 STL 中，这个透明环只是教学叠加。":"高亮和辅助线都以 XOAR9x7 的真实位置与尺度为基础。";
- status.innerHTML="<strong>"+d.en+" · "+d.zh+"：</strong>"+d.def;
- if(assist){if(id==="sweep"||id==="plane")setCamera(new THREE.Vector3(0,0,9),new THREE.Vector3());if(id==="dihedral")setCamera(new THREE.Vector3(0,-8.6,.7),new THREE.Vector3());if(["airfoil","chord","twist"].includes(id))setCamera(new THREE.Vector3(5.2,-6.4,4),new THREE.Vector3(.4,0,0))}
+function line(points,color=0x6ed8ff,w=2,closed=false){
+ const pts=closed?[...points,points[0]]:points;const g=new THREE.BufferGeometry().setFromPoints(pts);return new THREE.Line(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.98}));
 }
-function setCamera(p,t){camera.position.copy(p);controls.target.copy(t);controls.update()}
-document.getElementById("resetView").onclick=()=>setCamera(new THREE.Vector3(5.2,-6.4,4.2),new THREE.Vector3());
-document.getElementById("topView").onclick=()=>setCamera(new THREE.Vector3(0,0,9),new THREE.Vector3());
-document.getElementById("sideView").onclick=()=>setCamera(new THREE.Vector3(0,-8.7,.6),new THREE.Vector3());
-document.getElementById("autoRotate").onclick=e=>{auto=!auto;controls.autoRotate=auto;e.currentTarget.classList.toggle("on",auto)};
-dirBtn.onclick=()=>{rotationDir*=-1;dirBtn.textContent="旋向 "+(rotationDir===1?"CCW":"CW");if(activeConcept==="leading"||activeConcept==="trailing")selectConcept(activeConcept,false)};
-document.getElementById("explode").onclick=e=>{if(!fullMesh)return;exploded=!exploded;e.currentTarget.classList.toggle("on",exploded);fullMesh.visible=!exploded;overlayGroup.visible=!exploded;helperGroup.visible=!exploded;for(const x of explodeGroup.children)x.visible=exploded;status.innerHTML=exploded?"<strong>教学爆炸：</strong>原 STL 是一个封闭整体，这里按几何位置人为分成两片桨叶和中心区域，只用于理解部件关系。":"<strong>普通视图：</strong>已恢复完整 XOAR9x7 网格。"};
-const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
-function setMouse(ev){const r=renderer.domElement.getBoundingClientRect();mouse.x=(ev.clientX-r.left)/r.width*2-1;mouse.y=-(ev.clientY-r.top)/r.height*2+1;ray.setFromCamera(mouse,camera)}
-function conceptFromHit(h){if(h.object===fullMesh&&h.point){const rr=Math.hypot(h.point.x,h.point.y);if(rr<hubR)return"hub";if(rr<rootEnd)return"root";if(rr>tipStart)return"tip";return"blade"}return h.object.userData.concept||null}
-renderer.domElement.addEventListener("pointermove",ev=>{if(!fullMesh||exploded)return;setMouse(ev);const hs=ray.intersectObjects(pickables,true).filter(h=>h.object.visible),id=hs.length?conceptFromHit(hs[0]):null;if(id&&conceptMap[id]){tooltip.style.display="block";tooltip.style.left=ev.clientX+"px";tooltip.style.top=ev.clientY+"px";tooltip.textContent=conceptMap[id].en+" · "+conceptMap[id].zh;renderer.domElement.style.cursor="pointer"}else{tooltip.style.display="none";renderer.domElement.style.cursor="grab"}});
-renderer.domElement.addEventListener("pointerleave",()=>tooltip.style.display="none");
-renderer.domElement.addEventListener("click",ev=>{if(!fullMesh||exploded)return;setMouse(ev);const hs=ray.intersectObjects(pickables,true).filter(h=>h.object.visible);if(hs.length){const id=conceptFromHit(hs[0]);if(id&&conceptMap[id])selectConcept(id,false)}});
-function animateExplosion(){for(const x of explodeGroup.children){const t=exploded?x.userData.target:new THREE.Vector3();x.position.lerp(t,.09)}}
-function resize(){const w=holder.clientWidth,h=holder.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(holder);addEventListener("resize",resize);resize();
-function tick(){requestAnimationFrame(tick);animateExplosion();controls.update();renderer.render(scene,camera)}tick();
-loadMesh().catch(err=>{console.error(err);status.innerHTML="<strong>模型加载失败：</strong>"+err.message});
+function stationPoints(x,width=.0023){
+ const arr=[];for(let i=0;i<verts.length/3;i++){const p=v3(i);if(Math.abs(p.x-x)<width)arr.push(p)}return arr
+}
+function edgeCurve(sign,leading=true){
+ const pts=[];const xs=[];for(let k=0;k<22;k++)xs.push(sign*(.025+k*(.083/21)));
+ for(const x of xs){const a=stationPoints(x,.0022);if(!a.length)continue;const side=(x>0?1:-1)*(leading?1:-1);let p=a[0];for(const q of a)if(side*q.y>side*p.y)p=q;pts.push(p.clone())}return line(pts,leading?0x6ed8ff:0xff7183)
+}
+function sectionSegments(x,color=0xffc85a){
+ const pts=[];for(let i=0;i<faces.length;i+=3){const tri=[v3(faces[i]),v3(faces[i+1]),v3(faces[i+2])],hits=[];for(let e=0;e<3;e++){const a=tri[e],b=tri[(e+1)%3];if((a.x-x)*(b.x-x)<=0 && Math.abs(a.x-b.x)>1e-9){const t=(x-a.x)/(b.x-a.x);if(t>=0&&t<=1)hits.push(a.clone().lerp(b,t))}}if(hits.length>=2){pts.push(hits[0],hits[1])}}
+ const g=new THREE.BufferGeometry().setFromPoints(pts);return new THREE.LineSegments(g,new THREE.LineBasicMaterial({color}))
+}
+function sectionEdgePoints(x){
+ const a=stationPoints(x,.002);if(!a.length)return null;let lo=a[0],hi=a[0];for(const p of a){if(p.y<lo.y)lo=p;if(p.y>hi.y)hi=p}return {lo,hi,center:lo.clone().add(hi).multiplyScalar(.5)}
+}
+function buildHelpers(){
+ helperSets.blade=[subset(p=>Math.abs(p.x)>.022,0x6ed8ff,.72)];
+ helperSets.hub=[subset(p=>Math.abs(p.x)<=.025,0xffc85a,.9)];
+ helperSets.root=[subset(p=>Math.abs(p.x)>.018&&Math.abs(p.x)<.043,0x83e1a8,.86)];
+ helperSets.tip=[subset(p=>Math.abs(p.x)>.096,0xffc85a,.9)];
+ helperSets.leading=[edgeCurve(1,true),edgeCurve(-1,true)];
+ helperSets.trailing=[edgeCurve(1,false),edgeCurve(-1,false)];
+ const sec=sectionSegments(.078);helperSets.airfoil=[sec];
+ const ep=sectionEdgePoints(.078);helperSets.chord=ep?[line([ep.lo,ep.hi],0xffc85a)]:[];
+ helperSets.twist=[.035,.055,.077,.098].map(x=>sectionSegments(x,0xffc85a));
+ const centers=[];for(let x=.026;x<=.104;x+=.006){const e=sectionEdgePoints(x);if(e)centers.push(e.center)}helperSets.sweep=[line(centers,0x6ed8ff),line([new THREE.Vector3(.022,0,0),new THREE.Vector3(.109,0,0)],0xffc85a)];
+ helperSets.dihedral=[line(centers,0x6ed8ff),line([new THREE.Vector3(.022,0,0),new THREE.Vector3(.109,0,0)],0xffc85a)];
+ const plane=new THREE.Mesh(new THREE.CircleGeometry(.118,96),new THREE.MeshBasicMaterial({color:0x6ed8ff,transparent:true,opacity:.09,side:THREE.DoubleSide,depthWrite:false}));helperSets.plane=[plane];
+ const duct=new THREE.Mesh(new THREE.TorusGeometry(.121,.0045,18,128),new THREE.MeshStandardMaterial({color:0x6ed8ff,transparent:true,opacity:.5,roughness:.25}));helperSets.duct=[duct];
+ const hp=[];const pitch=.070;for(let i=0;i<180;i++){const t=i/179,a=t*Math.PI*2*1.03;hp.push(new THREE.Vector3(.126*Math.cos(a),.126*Math.sin(a),-.035+t*pitch))}helperSets.pitch=[line(hp,0xffc85a)];
+ const upper=subset((ctr,a,b,c)=>{const n=b.clone().sub(a).cross(c.clone().sub(a));return n.z>0},0x6ed8ff,.72);
+ const lower=subset((ctr,a,b,c)=>{const n=b.clone().sub(a).cross(c.clone().sub(a));return n.z<=0},0xffc85a,.72);helperSets.surfaces=[upper,lower];
+ for(const arr of Object.values(helperSets))for(const o of arr){o.visible=false;helperGroup.add(o)}
+ // explosion pieces
+ const left=subset(p=>p.x<-.022,0xa9bfd0,.98),right=subset(p=>p.x>.022,0xa9bfd0,.98),hub=subset(p=>Math.abs(p.x)<=.025,0x60798c,.98);
+ helperSets.explodeParts=[left,right,hub];for(const o of helperSets.explodeParts){o.visible=false;helperGroup.add(o)}
+}
+function hideHelpers(){for(const [k,arr] of Object.entries(helperSets)){if(k==="explodeParts")continue;for(const o of arr)o.visible=false}if(wholeMesh){wholeMesh.material.color.set(0x9db5c8);wholeMesh.material.emissive.set(0);wholeMesh.material.opacity=1;wholeMesh.material.transparent=false}}
+function select(id,assist=false){
+ if(!map[id]||!wholeMesh)return;hideHelpers();document.querySelectorAll(".concept").forEach(b=>b.classList.toggle("active",b.dataset.id===id));
+ const c=map[id];en.textContent=c.en;zh.textContent=c.zh;def.textContent=c.def;body.textContent=c.body;eq.textContent=c.eq;bullets.innerHTML="";for(const x of c.bul){const li=document.createElement("li");li.textContent=x;bullets.appendChild(li)}
+ if(helperSets[id])for(const o of helperSets[id])o.visible=true;
+ if(["blade","hub","root","tip","surfaces"].includes(id)){wholeMesh.material.transparent=true;wholeMesh.material.opacity=.15}
+ if(id==="dihedral"){for(const o of helperSets.plane)o.visible=true}
+ badge.innerHTML="<strong>"+c.en+" · "+c.zh+"：</strong>"+c.def;
+ if(assist&&id==="sweep")setCam(new THREE.Vector3(0,0,7.1),new THREE.Vector3(0,0,0));
+ if(assist&&["dihedral","pitch"].includes(id))setCam(new THREE.Vector3(0,-7,1.5),new THREE.Vector3(0,0,0));
+ if(assist&&["airfoil","chord","twist"].includes(id))setCam(new THREE.Vector3(4.8,-5.8,3.4),new THREE.Vector3(.4,0,0));
+}
+function setCam(p,t){camera.position.copy(p);controls.target.copy(t);controls.update()}
+document.getElementById("home").onclick=()=>setCam(new THREE.Vector3(4.9,-6.6,4.3),new THREE.Vector3(0,0,0));
+document.getElementById("top").onclick=()=>setCam(new THREE.Vector3(0,0,7.1),new THREE.Vector3(0,0,0));
+document.getElementById("side").onclick=()=>setCam(new THREE.Vector3(0,-7,1.1),new THREE.Vector3(0,0,0));
+document.getElementById("spin").onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.classList.toggle("on",controls.autoRotate)};
+document.getElementById("wire").onclick=e=>{wire=!wire;if(wholeMesh)wholeMesh.material.wireframe=wire;for(const o of helperSets.explodeParts||[])o.material.wireframe=wire;e.currentTarget.classList.toggle("on",wire)};
+document.getElementById("explode").onclick=e=>{if(!wholeMesh)return;explode=!explode;e.currentTarget.classList.toggle("on",explode);wholeMesh.visible=!explode;const [l,r,h]=helperSets.explodeParts;for(const o of [l,r,h])o.visible=explode;l.position.x+=(explode?-0.018:0);r.position.x+=(explode?.018:0);h.position.z=explode?-.018:0;if(!explode){l.position.set(0,0,0);r.position.set(0,0,0);h.position.set(0,0,0)}badge.innerHTML=explode?"<strong>教学爆炸图：</strong>把真实 STL 按空间区域分成左桨叶、桨毂、右桨叶，仅用于理解结构，不代表真实可拆装关系。":"<strong>XOAR 真实模型：</strong>已恢复整体显示。"};
 
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+renderer.domElement.onpointermove=e=>{if(!wholeMesh)return;const r=renderer.domElement.getBoundingClientRect();mouse.x=(e.clientX-r.left)/r.width*2-1;mouse.y=-(e.clientY-r.top)/r.height*2+1;ray.setFromCamera(mouse,camera);const h=ray.intersectObject(wholeMesh);if(h.length){const p=h[0].point.clone();group.worldToLocal(p);const id=Math.abs(p.x)>.098?"tip":Math.abs(p.x)<.025?"hub":Math.abs(p.x)<.043?"root":"blade";tip.style.display="block";tip.style.left=e.clientX+12+"px";tip.style.top=e.clientY+12+"px";tip.textContent=map[id].en+" · "+map[id].zh;renderer.domElement.style.cursor="pointer";renderer.domElement.onclick=()=>select(id,false)}else{tip.style.display="none";renderer.domElement.style.cursor="grab";renderer.domElement.onclick=null}};
+renderer.domElement.onpointerleave=()=>tip.style.display="none";
+
+function resize(){const w=holder.clientWidth,h=holder.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(holder);resize();
+function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();
+loadMesh().catch(err=>{loading.innerHTML='<div class="loader"><b style="color:#ff7183">模型加载失败</b><br><span>'+String(err)+'</span></div>';console.error(err)});
 </script>
 </body>
 </html>
